@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 extern crate redis;
 use redis::{aio::ConnectionLike, AsyncCommands};
 
+use crate::charts::chart::DefaultChartTemplate;
+
 #[derive(Debug, Clone)]
 pub struct Software {
     pub id: i16,
@@ -11,13 +13,14 @@ pub struct Software {
     pub metrics_class: Option<String>,
     pub example_plugin: Option<String>,
     pub max_requests_per_ip: i32,
-    // pub default_charts: Vec<DefaultChart>
+    pub default_charts: Vec<DefaultChartTemplate>,
     pub hide_in_plugin_list: bool,
 }
 
 pub async fn find_all<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
 ) -> Result<Vec<Software>, redis::RedisError> {
+    // TODO: Cache result since it hardly ever changes
     let software_ids = find_all_software_ids(con).await?;
     let mut software = Vec::new();
     for id in software_ids {
@@ -33,6 +36,7 @@ pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
     id: i16,
 ) -> Result<Option<Software>, redis::RedisError> {
+    // TODO: Cache result since it hardly ever changes
     let software: HashMap<String, String> = con.hgetall(format!("software:{}", id)).await?;
     if software.is_empty() {
         return Ok(None);
@@ -46,7 +50,11 @@ pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
         metrics_class: software.get("metricsClass").map(|s| s.to_string()),
         example_plugin: software.get("examplePlugin").map(|s| s.to_string()),
         max_requests_per_ip: software.get("maxRequestsPerIp").unwrap().parse().unwrap(),
-        hide_in_plugin_list: software.get("hideInPluginList").unwrap().parse().unwrap(),
+        hide_in_plugin_list: software
+            .get("hideInPluginList")
+            .unwrap_or(&String::from("0"))
+            != "0",
+        default_charts: serde_json::from_str(software.get("defaultCharts").unwrap()).unwrap(),
     }))
 }
 

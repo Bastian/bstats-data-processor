@@ -1,6 +1,10 @@
 use crate::bound_redis_client::BoundRedisClient;
-use data_processor::software::Software;
+use data_processor::{
+    charts::chart::{ChartType, DefaultChartTemplate},
+    software::Software,
+};
 use redis::AsyncCommands;
+use serde_json::json;
 
 pub struct TestEnvironment {
     redis_client: BoundRedisClient,
@@ -18,29 +22,8 @@ impl TestEnvironment {
 
     pub async fn with_data() -> Self {
         let mut environment: TestEnvironment = Self::empty().await;
-
-        environment.add_software(Software {
-            id: 1,
-            name: String::from("Bukkit / Spigot"),
-            url: String::from("bukkit"),
-            global_plugin: Some(1),
-            metrics_class: Some(String::from("https://raw.githubusercontent.com/Bastian/bstats-metrics/single-file/bukkit/Metrics.java")),
-            example_plugin: Some(String::from("https://github.com/Bastian/bstats-metrics/blob/1.x.x/bstats-bukkit/src/examples/java/ExamplePlugin.java")),
-            max_requests_per_ip: 10,
-            hide_in_plugin_list: false,
-        }).await;
-
-        environment.add_software(Software {
-            id: 2,
-            name: String::from("Bungeecord"),
-            url: String::from("bungeecord"),
-            global_plugin: Some(2),
-            metrics_class: Some(String::from("https://raw.githubusercontent.com/Bastian/bstats-metrics/single-file/bungeecord/Metrics.java")),
-            example_plugin: Some(String::from("https://github.com/Bastian/bstats-metrics/blob/1.x.x/bstats-bungeecord/src/examples/java/ExamplePlugin.java")),
-            max_requests_per_ip: 10,
-            hide_in_plugin_list: false,
-        }).await;
-
+        environment.add_software(get_bukkit_software()).await;
+        environment.add_software(get_bungeecord_software()).await;
         environment
     }
 
@@ -71,7 +54,18 @@ impl TestEnvironment {
                         software.example_plugin.unwrap().to_string(),
                     ),
                     ("maxRequestsPerIp", software.max_requests_per_ip.to_string()),
-                    ("hideInPluginList", software.hide_in_plugin_list.to_string()),
+                    (
+                        "hideInPluginList",
+                        if software.hide_in_plugin_list {
+                            String::from("1")
+                        } else {
+                            String::from("0")
+                        },
+                    ),
+                    (
+                        "defaultCharts",
+                        serde_json::to_string(&software.default_charts).unwrap(),
+                    ),
                 ],
             )
             .await
@@ -92,5 +86,243 @@ impl TestEnvironment {
             .get_multiplexed_tokio_connection()
             .await
             .unwrap()
+    }
+}
+
+pub fn get_bukkit_software() -> Software {
+    Software {
+        id: 1,
+        name: String::from("Bukkit / Spigot"),
+        url: String::from("bukkit"),
+        global_plugin: Some(1),
+        metrics_class: Some(String::from("https://raw.githubusercontent.com/Bastian/bstats-metrics/single-file/bukkit/Metrics.java")),
+        example_plugin: Some(String::from("https://github.com/Bastian/bstats-metrics/blob/1.x.x/bstats-bukkit/src/examples/java/ExamplePlugin.java")),
+        max_requests_per_ip: 10,
+        hide_in_plugin_list: false,
+        default_charts: vec![
+            DefaultChartTemplate {
+                id: String::from("servers"),
+                chart_type: ChartType::SingleLineChart,
+                title: String::from("Servers using %plugin.name%"),
+                data: json!({
+                    "lineName": "Servers",
+                    "filter": {
+                        "enabled": false,
+                        "maxValue": 1,
+                        "minValue": 1
+                    }
+                }),
+                request_parser: json!({
+                    "predefinedValue": 1
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("players"),
+                chart_type: ChartType::SingleLineChart,
+                title: String::from("Players on servers using %plugin.name%"),
+                data: json!({
+                    "lineName": "Players",
+                    "filter": {
+                        "enabled": true,
+                        "maxValue": 200,
+                        "minValue": 0
+                    }
+                }),
+                request_parser: json!({
+                    "nameInRequest": "playerAmount",
+                    "type": "number",
+                    "position": "global"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("onlineMode"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("Online mode"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "nameInRequest": "onlineMode",
+                    "position": "global",
+                    "type": "boolean",
+                    "trueValue": "online",
+                    "falseValue": "offline"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("minecraftVersion"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("Minecraft Version"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "useHardcodedParser": "bukkitMinecraftVersion",
+                    "position": "global"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("serverSoftware"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("Server Software"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "useHardcodedParser": "bukkitServerSoftware",
+                    "position": "global"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("pluginVersion"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("Plugin Version"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "nameInRequest": "pluginVersion",
+                    "position": "plugin"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("coreCount"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("Core count"),
+                data: json!({
+                    "filter": {
+                        "enabled": true,
+                        "useRegex": true,
+                        "blacklist": false,
+                        "filter": [
+                            "([0-9]){1,2}"
+                        ]
+                    }
+                }),
+                request_parser: json!({
+                    "nameInRequest": "coreCount",
+                    "type": "number",
+                    "position": "global"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("osArch"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("System arch"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "nameInRequest": "osArch",
+                    "position": "global"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("os"),
+                chart_type: ChartType::DrilldownPie,
+                title: String::from("Operating System"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "position": "global",
+                    "useHardcodedParser": "os"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("location"),
+                chart_type: ChartType::SimplePie,
+                title: String::from("Server Location"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "predefinedValue": "%country.name%"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("javaVersion"),
+                chart_type: ChartType::DrilldownPie,
+                title: String::from("Java Version"),
+                data: json!({
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "useHardcodedParser": "javaVersion",
+                    "position": "global"
+                }),
+            },
+            DefaultChartTemplate {
+                id: String::from("locationMap"),
+                chart_type: ChartType::SimpleMap,
+                title: String::from("Server Location"),
+                data: json!({
+                    "valueName": "Servers",
+                    "filter": {
+                        "enabled": false,
+                        "useRegex": false,
+                        "blacklist": false,
+                        "filter": []
+                    }
+                }),
+                request_parser: json!({
+                    "predefinedValue": "AUTO"
+                }),
+            },
+        ]
+    }
+}
+
+pub fn get_bungeecord_software() -> Software {
+    Software {
+        id: 2,
+        name: String::from("Bungeecord"),
+        url: String::from("bungeecord"),
+        global_plugin: Some(2),
+        metrics_class: Some(String::from("https://raw.githubusercontent.com/Bastian/bstats-metrics/single-file/bungeecord/Metrics.java")),
+        example_plugin: Some(String::from("https://github.com/Bastian/bstats-metrics/blob/1.x.x/bstats-bungeecord/src/examples/java/ExamplePlugin.java")),
+        max_requests_per_ip: 10,
+        hide_in_plugin_list: false,
+        default_charts: vec![]
     }
 }

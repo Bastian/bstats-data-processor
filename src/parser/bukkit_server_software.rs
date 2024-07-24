@@ -10,8 +10,16 @@ pub struct BukkitServerSoftwareParser;
 impl Parser for BukkitServerSoftwareParser {
     fn parse(&self, schema: SubmitDataSchema) -> Option<Value> {
         let software_name = parse_bukkit_server_software(
-            schema.bukkit_version.as_deref(),
-            schema.bukkit_name.as_deref(),
+            schema
+                .extra
+                .get("bukkitVersion")
+                .and_then(|v| v.as_str())
+                .as_deref(),
+            schema
+                .extra
+                .get("bukkitName")
+                .and_then(|v| v.as_str())
+                .as_deref(),
         )?;
         Some(json!(SimplePie {
             value: software_name

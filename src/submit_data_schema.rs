@@ -13,42 +13,27 @@ pub struct SubmitDataSchema {
     #[serde(rename = "serverUUID")]
     pub server_uuid: String,
 
-    /* TODO
-         @ValidateNested()
-         @Type(() => SubmitDataServiceDto)
-         service: SubmitDataServiceDto;
-    */
     #[validate(length(min = 1))]
-    #[serde(rename = "osName")]
-    pub os_name: Option<String>,
+    #[serde(rename = "metricsVersion")]
+    pub metrics_version: Option<String>,
 
-    #[validate(length(min = 1))]
-    #[serde(rename = "osVersion")]
-    pub os_version: Option<String>,
-
-    #[validate(length(min = 1))]
-    #[serde(rename = "javaVersion")]
-    pub java_version: Option<String>,
-
-    #[validate(length(min = 1))]
-    #[serde(rename = "bukkitVersion")]
-    pub bukkit_version: Option<String>,
-
-    #[validate(length(min = 1))]
-    #[serde(rename = "bukkitName")]
-    pub bukkit_name: Option<String>,
-
-    #[validate(length(min = 1))]
-    #[serde(rename = "bungeecordVersion")]
-    pub bungeecord_version: Option<String>,
+    pub service: SubmitDataServiceSchema,
 
     // There can be any arbitrary properties (used with default chart with parser position 'global')
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Validate, Deserialize)]
-pub struct Chart {
+pub struct SubmitDataServiceSchema {
+    pub id: i64,
+    #[serde(rename = "customCharts")]
+    pub custom_charts: Option<Vec<SubmitDataChartSchema>>,
+}
+
+#[derive(Debug, Validate, Deserialize)]
+pub struct SubmitDataChartSchema {
     #[validate(length(min = 1))]
     #[serde(rename = "chartId")]
     pub chart_id: String,

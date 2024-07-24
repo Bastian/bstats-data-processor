@@ -10,9 +10,9 @@ pub struct OsParser;
 
 impl Parser for OsParser {
     fn parse(&self, schema: crate::submit_data_schema::SubmitDataSchema) -> Option<Value> {
-        let os_name = schema.os_name?;
-        let os_version = schema.os_version?;
-        let (outer, inner) = parse_os(&os_name, &os_version);
+        let os_name = schema.extra.get("osName").and_then(|v| v.as_str())?;
+        let os_version = schema.extra.get("osVersion").and_then(|v| v.as_str())?;
+        let (outer, inner) = parse_os(os_name, os_version);
         Some(json!(DrilldownPie {
             values: HashMap::from([(outer, HashMap::from([(inner, 1),])),])
         }))

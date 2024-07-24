@@ -9,7 +9,13 @@ pub struct BukkitMinecraftVersionParser;
 
 impl Parser for BukkitMinecraftVersionParser {
     fn parse(&self, schema: SubmitDataSchema) -> Option<Value> {
-        let version = parse_bukkit_minecraft_version(schema.bukkit_version.as_deref())?;
+        let version = parse_bukkit_minecraft_version(
+            schema
+                .extra
+                .get("bukkitVersion")
+                .and_then(|v| v.as_str())
+                .as_deref(),
+        )?;
         Some(json!(SimplePie { value: version }))
     }
 }

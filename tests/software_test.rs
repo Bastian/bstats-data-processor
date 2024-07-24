@@ -13,6 +13,12 @@ async fn test_find_all() {
     let software: Vec<data_processor::software::Software> = find_all(&mut con).await.unwrap();
     // The default test environment has two software entries
     assert_eq!(software.len(), test_environment.software().len());
+    assert_eq!(software[0].name, "Bukkit / Spigot");
+    assert_eq!(
+        software[0].default_charts[0].title,
+        "Servers using %plugin.name%"
+    );
+    assert_eq!(software[0].hide_in_plugin_list, false);
 
     // In an empty environment, no data should be returned
     let empty_test_environment = TestEnvironment::empty().await;
