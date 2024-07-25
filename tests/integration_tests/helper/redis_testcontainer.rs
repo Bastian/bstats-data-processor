@@ -4,13 +4,13 @@ use testcontainers::{
     ContainerAsync, GenericImage,
 };
 
-pub struct BoundRedisClient {
+pub struct RedisTestcontainer {
     client: redis::Client,
     // Bind the container to the struct to keep it alive
     _container: ContainerAsync<GenericImage>,
 }
 
-impl BoundRedisClient {
+impl RedisTestcontainer {
     pub async fn new() -> Self {
         let container = GenericImage::new("redis", "7.2.4")
             .with_exposed_port(6379.tcp())

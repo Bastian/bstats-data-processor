@@ -1,4 +1,3 @@
-use crate::bound_redis_client::BoundRedisClient;
 use data_processor::{
     charts::chart::{ChartType, DefaultChartTemplate},
     software::Software,
@@ -6,16 +5,17 @@ use data_processor::{
 use redis::AsyncCommands;
 use serde_json::json;
 
+use super::redis_testcontainer::RedisTestcontainer;
+
 pub struct TestEnvironment {
-    redis_client: BoundRedisClient,
+    redis_testcontainer: RedisTestcontainer,
     software: Vec<Software>,
 }
 
 impl TestEnvironment {
     pub async fn empty() -> Self {
-        let redis_client: BoundRedisClient = BoundRedisClient::new().await;
         Self {
-            redis_client,
+            redis_testcontainer: RedisTestcontainer::new().await,
             software: Vec::new(),
         }
     }
@@ -74,7 +74,7 @@ impl TestEnvironment {
     }
 
     pub fn redis_client(&self) -> &redis::Client {
-        &self.redis_client.client()
+        &self.redis_testcontainer.client()
     }
 
     pub fn software(&self) -> &Vec<Software> {

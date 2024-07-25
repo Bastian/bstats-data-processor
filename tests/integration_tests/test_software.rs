@@ -1,8 +1,5 @@
+use crate::helper::test_environment::TestEnvironment;
 use data_processor::software::find_all;
-use test_environment::TestEnvironment;
-
-mod bound_redis_client;
-mod test_environment;
 
 #[tokio::test]
 async fn test_find_all() {
@@ -26,4 +23,15 @@ async fn test_find_all() {
 
     let software: Vec<data_processor::software::Software> = find_all(&mut con).await.unwrap();
     assert_eq!(software.len(), 0);
+}
+
+#[tokio::test]
+async fn test_find_by_url() {
+    let test_environment = TestEnvironment::with_data().await;
+    let mut con = test_environment.redis_multiplexed_connection().await;
+
+    let software = data_processor::software::find_by_url(&mut con, "bukkit")
+        .await
+        .unwrap();
+    assert_eq!(software.unwrap().name, "Bukkit / Spigot");
 }

@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet};
 extern crate redis;
 use redis::{aio::ConnectionLike, AsyncCommands};
+use serde::{Deserialize, Serialize};
 
 use crate::charts::chart::DefaultChartTemplate;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Software {
     pub id: i16,
     pub name: String,
@@ -29,7 +30,21 @@ pub async fn find_all<C: ConnectionLike + AsyncCommands>(
         }
     }
 
+    software.sort_by_key(|s| s.id);
+
     Ok(software)
+}
+
+pub async fn find_by_url<C: ConnectionLike + AsyncCommands>(
+    con: &mut C,
+    url: &str,
+) -> Result<Option<Software>, redis::RedisError> {
+    let id = _find_software_id_by_url(con, url).await?;
+    if id.is_none() {
+        return Ok(None);
+    }
+
+    find_by_id(con, id.unwrap()).await
 }
 
 pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
