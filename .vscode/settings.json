@@ -1,3 +1,9 @@
 {
-  "cSpell.words": ["bukkit", "bungeecord", "testcontainer"]
+  "cSpell.words": [
+    "bukkit",
+    "bungeecord",
+    "ratelimited",
+    "ratelimits",
+    "testcontainer"
+  ]
 }

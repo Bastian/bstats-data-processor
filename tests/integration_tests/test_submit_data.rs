@@ -1,5 +1,7 @@
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
 use actix_web::{http::header::ContentType, test, web, App};
-use data_processor::handle_data_submission;
+use data_processor::submit_data;
 use serde_json::{json, Value};
 
 use crate::helper::test_environment::TestEnvironment;
@@ -13,11 +15,12 @@ async fn test_submit_data() {
     let app = test::init_service(
         App::new()
             .app_data(web::Data::new(redis.clone()))
-            .service(handle_data_submission),
+            .service(submit_data),
     )
     .await;
     let req = test::TestRequest::post()
         .uri("/bukkit")
+        .peer_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 1111))
         .insert_header(ContentType::json())
         .set_payload(
             json!({

@@ -13,7 +13,7 @@ pub struct Software {
     pub global_plugin: Option<i64>,
     pub metrics_class: Option<String>,
     pub example_plugin: Option<String>,
-    pub max_requests_per_ip: i32,
+    pub max_requests_per_ip: i16,
     pub default_charts: Vec<DefaultChartTemplate>,
     pub hide_in_plugin_list: bool,
 }

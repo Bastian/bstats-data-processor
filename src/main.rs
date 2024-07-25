@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use data_processor::{handle_data_submission, index};
+use data_processor::{index, submit_data};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -9,7 +9,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(redis.clone()))
             .service(index)
-            .service(handle_data_submission)
+            .service(submit_data)
     })
     .bind(("127.0.0.1", 1234))?
     .run()

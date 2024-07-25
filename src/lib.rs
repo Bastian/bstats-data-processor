@@ -1,11 +1,14 @@
 pub mod charts;
+pub mod data_submission;
+pub mod date_util;
 pub mod parser;
+pub mod ratelimits;
 pub mod software;
 pub mod submit_data_schema;
+pub mod util;
 
-use actix_web::{error, get, post, web, Responder};
+use actix_web::{get, post, web, HttpRequest, Responder};
 use charts::simple_pie::SimplePie;
-use software::find_by_url;
 use submit_data_schema::SubmitDataSchema;
 
 #[get("/")]
@@ -16,22 +19,11 @@ async fn index() -> impl Responder {
 }
 
 #[post("/{software_url}")]
-async fn handle_data_submission(
+async fn submit_data(
+    request: HttpRequest,
     redis: web::Data<redis::Client>,
     software_url: web::Path<String>,
-    _data: web::Json<SubmitDataSchema>,
+    data: web::Json<SubmitDataSchema>,
 ) -> actix_web::Result<impl Responder> {
-    let mut con = redis
-        .get_connection_manager()
-        .await
-        .map_err(error::ErrorInternalServerError)?;
-
-    let software = find_by_url(&mut con, software_url.as_str()).await;
-
-    // TODO: This does not make sense, it's only here for testing
-    match software {
-        Ok(Some(s)) => Ok(web::Json(s)),
-        Ok(None) => Err(error::ErrorNotFound("Software not found")),
-        Err(e) => Err(error::ErrorInternalServerError(e)),
-    }
+    data_submission::handle_data_submission(request, redis, software_url, data, false).await
 }
