@@ -2,7 +2,7 @@ use actix_web::{error, HttpRequest};
 
 /// Get the IP address of the client making the request.
 
-pub fn get_ip(request: HttpRequest) -> Result<String, error::Error> {
+pub fn get_ip(request: &HttpRequest) -> Result<String, error::Error> {
     let behind_cloudflare =
         std::env::var("BEHIND_CLOUDFLARE_PROXY").unwrap_or(String::from("false")) == "true";
     let behind_proxy = std::env::var("BEHIND_PROXY").unwrap_or(String::from("false")) == "true";
@@ -50,19 +50,19 @@ mod tests {
             .to_http_request();
 
         // Should not use proxy ips when not behind Cloudflare
-        let ip = get_ip(req.clone()).unwrap();
+        let ip = get_ip(&req).unwrap();
         assert_eq!(ip, "1.1.1.1");
 
         // Should use Cloudflare header when behind Cloudflare
         std::env::set_var("BEHIND_CLOUDFLARE_PROXY", "true");
-        let ip = get_ip(req.clone()).unwrap();
+        let ip = get_ip(&req).unwrap();
         assert_eq!(ip, "2.2.2.2");
 
         // Should use proxy ip when behind proxy
         std::env::set_var("BEHIND_PROXY", "true");
         std::env::set_var("BEHIND_CLOUDFLARE_PROXY", "false");
 
-        let ip = get_ip(req).unwrap();
+        let ip = get_ip(&req).unwrap();
         assert_eq!(ip, "4.4.4.4");
     }
 }

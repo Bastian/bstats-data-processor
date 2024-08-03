@@ -10,7 +10,7 @@ pub struct Software {
     pub id: i16,
     pub name: String,
     pub url: String,
-    pub global_plugin: Option<i64>,
+    pub global_plugin: Option<i32>,
     pub metrics_class: Option<String>,
     pub example_plugin: Option<String>,
     pub max_requests_per_ip: i16,

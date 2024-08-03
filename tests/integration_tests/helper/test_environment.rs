@@ -1,5 +1,6 @@
 use data_processor::{
     charts::chart::{ChartType, DefaultChartTemplate},
+    service::Service,
     software::Software,
 };
 use redis::AsyncCommands;
@@ -10,6 +11,7 @@ use super::redis_testcontainer::RedisTestcontainer;
 pub struct TestEnvironment {
     redis_testcontainer: RedisTestcontainer,
     software: Vec<Software>,
+    services: Vec<Service>,
 }
 
 impl TestEnvironment {
@@ -17,6 +19,7 @@ impl TestEnvironment {
         Self {
             redis_testcontainer: RedisTestcontainer::new().await,
             software: Vec::new(),
+            services: Vec::new(),
         }
     }
 
@@ -24,6 +27,10 @@ impl TestEnvironment {
         let mut environment: TestEnvironment = Self::empty().await;
         environment.add_software(get_bukkit_software()).await;
         environment.add_software(get_bungeecord_software()).await;
+        environment.add_service(get_bukkit_global_service()).await;
+        environment
+            .add_service(get_bungeecord_global_service())
+            .await;
         environment
     }
 
@@ -71,6 +78,53 @@ impl TestEnvironment {
             .await
             .unwrap();
         self.software.push(cloned_software);
+    }
+
+    pub async fn add_service(&mut self, service: Service) {
+        let mut con: redis::aio::MultiplexedConnection = self.redis_multiplexed_connection().await;
+
+        let software = self
+            .software
+            .iter()
+            .find(|s| s.id == service.software_id)
+            .unwrap();
+
+        let _: () = con.sadd("plugins.ids", service.id).await.unwrap();
+        let _: () = con
+            .set(
+                format!(
+                    "plugins.index.id.url+name:{}.{}",
+                    software.url,
+                    service.name.to_ascii_lowercase()
+                ),
+                service.id,
+            )
+            .await
+            .unwrap();
+
+        let cloned_service = service.clone();
+
+        let _: () = con
+            .hset_multiple(
+                format!("plugins:{}", service.id),
+                &vec![
+                    ("name", service.name),
+                    ("owner", service.owner),
+                    ("software", service.software_id.to_string()),
+                    (
+                        "global",
+                        if service.global {
+                            String::from("1")
+                        } else {
+                            String::from("0")
+                        },
+                    ),
+                    ("charts", serde_json::to_string(&service.charts).unwrap()),
+                ],
+            )
+            .await
+            .unwrap();
+        self.services.push(cloned_service);
     }
 
     pub fn redis_client(&self) -> &redis::Client {
@@ -324,5 +378,27 @@ pub fn get_bungeecord_software() -> Software {
         max_requests_per_ip: 10,
         hide_in_plugin_list: false,
         default_charts: vec![]
+    }
+}
+
+pub fn get_bukkit_global_service() -> Service {
+    Service {
+        id: 1,
+        name: String::from("_bukkit_"),
+        owner: String::from("Admin"),
+        software_id: 1,
+        global: true,
+        charts: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 38279],
+    }
+}
+
+pub fn get_bungeecord_global_service() -> Service {
+    Service {
+        id: 2,
+        name: String::from("_bungeecord_"),
+        owner: String::from("Admin"),
+        software_id: 2,
+        global: true,
+        charts: vec![21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
     }
 }

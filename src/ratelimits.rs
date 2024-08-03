@@ -6,7 +6,7 @@ pub async fn is_ratelimited<C: ConnectionLike + AsyncCommands>(
     max_requests_per_ip: i16,
     server_uuid: &str,
     ip: &str,
-    service_id: i64,
+    service_id: i32,
     tms2000: i64,
 ) -> Result<bool, redis::RedisError> {
     if _is_ratelimited(

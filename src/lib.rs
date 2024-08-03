@@ -3,6 +3,7 @@ pub mod data_submission;
 pub mod date_util;
 pub mod parser;
 pub mod ratelimits;
+pub mod service;
 pub mod software;
 pub mod submit_data_schema;
 pub mod util;
@@ -25,5 +26,5 @@ async fn submit_data(
     software_url: web::Path<String>,
     data: web::Json<SubmitDataSchema>,
 ) -> actix_web::Result<impl Responder> {
-    data_submission::handle_data_submission(request, redis, software_url, data, false).await
+    data_submission::handle_data_submission(request, redis, software_url, data.0, false).await
 }
