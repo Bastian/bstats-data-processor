@@ -8,8 +8,7 @@ async fn test_find_all() {
     let mut con = test_environment.redis_multiplexed_connection().await;
 
     let services: Vec<Service> = find_all(&mut con).await.unwrap();
-    // The default test environment has two services
-    assert_eq!(services.len(), test_environment.software().len());
+    assert_eq!(services.len(), test_environment.services().len());
     assert_eq!(services[0].name, "_bukkit_");
     assert_eq!(services[0].global, true);
 

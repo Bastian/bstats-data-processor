@@ -8,7 +8,6 @@ async fn test_find_all() {
     let mut con = test_environment.redis_multiplexed_connection().await;
 
     let software: Vec<data_processor::software::Software> = find_all(&mut con).await.unwrap();
-    // The default test environment has two software entries
     assert_eq!(software.len(), test_environment.software().len());
     assert_eq!(software[0].name, "Bukkit / Spigot");
     assert_eq!(

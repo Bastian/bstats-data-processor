@@ -135,6 +135,10 @@ impl TestEnvironment {
         &self.software
     }
 
+    pub fn services(&self) -> &Vec<Service> {
+        &self.services
+    }
+
     pub async fn redis_multiplexed_connection(&self) -> redis::aio::MultiplexedConnection {
         self.redis_client()
             .get_multiplexed_tokio_connection()
