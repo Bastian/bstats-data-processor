@@ -1,9 +1,12 @@
+use std::str::FromStr;
+
 use crate::date_util::date_to_tms2000;
 use crate::ratelimits::is_ratelimited;
 use crate::service;
 use crate::software;
 use crate::submit_data_schema::SubmitDataSchema;
 use crate::submit_data_schema::SubmitDataServiceSchema;
+use crate::util::geo_ip;
 use crate::util::ip_parser;
 use actix_web::{error, web, HttpRequest, Responder};
 
@@ -88,6 +91,11 @@ pub async fn handle_data_submission(
             }
         }
     }
+
+    let _country = match FromStr::from_str(&ip) {
+        Ok(ip) => geo_ip::get_country(ip),
+        _ => None,
+    };
 
     // TODO: This does not make sense, it's only here for testing
     Ok(web::Json(software))

@@ -567,6 +567,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "chrono",
+ "maxminddb",
  "once_cell",
  "phf",
  "redis",
@@ -1317,6 +1318,16 @@ name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffbee8634e0d45d258acb448e7eaab3fce7a0a467395d4d9f228e3c1f01fb2e4"
+
+[[package]]
+name = "maxminddb"
+version = "0.17.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d13fa57adcc4f3aca91e511b3cdaa58ed8cbcbf97f20e342a11218c76e127f51"
+dependencies = [
+ "log",
+ "serde",
+]
 
 [[package]]
 name = "memchr"

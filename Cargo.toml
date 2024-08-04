@@ -16,6 +16,7 @@ redis = { version = "0.25.4", features = ["tokio-comp", "aio", "connection-manag
 redis-test = "0.4.0"
 tokio = "1.39.1"
 chrono = "0.4.38"
+maxminddb = "0.17"
 
 [dev-dependencies]
 testcontainers = "0.20.1"
