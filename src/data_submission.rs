@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
 use crate::date_util::date_to_tms2000;
@@ -72,6 +73,7 @@ pub async fn handle_data_submission(
                     service: SubmitDataServiceSchema {
                         id: global_plugin.id,
                         custom_charts: None,
+                        extra: HashMap::new(),
                     },
                 },
                 true,
@@ -103,16 +105,18 @@ pub async fn handle_data_submission(
         ));
     }
 
-    let _country = match FromStr::from_str(&ip) {
+    let country = match FromStr::from_str(&ip) {
         Ok(ip) => geo_ip::get_country(ip),
         _ => None,
     };
+
+    let country_name = country.and_then(|(_, c)| c);
 
     let default_charts: Vec<_> = software
         .default_charts
         .iter()
         .filter_map(|template| {
-            parser::get_parser(template).and_then(|parser| {
+            parser::get_parser(template, country_name.clone()).and_then(|parser| {
                 Some(SubmitDataChartSchema {
                     chart_id: template.id.clone(),
                     data: parser.parse(&data)?,

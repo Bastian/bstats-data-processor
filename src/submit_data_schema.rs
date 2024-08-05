@@ -30,6 +30,10 @@ pub struct SubmitDataServiceSchema {
     pub id: i32,
     #[serde(rename = "customCharts")]
     pub custom_charts: Option<Vec<SubmitDataChartSchema>>,
+
+    // There can be any arbitrary properties (used with default chart with parser position 'plugin')
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
 }
 
 #[derive(Debug, Validate, Deserialize)]
