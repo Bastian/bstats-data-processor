@@ -7,13 +7,13 @@ use crate::charts::chart::DefaultChartTemplate;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Software {
-    pub id: i16,
+    pub id: u16,
     pub name: String,
     pub url: String,
-    pub global_plugin: Option<i32>,
+    pub global_plugin: Option<u32>,
     pub metrics_class: Option<String>,
     pub example_plugin: Option<String>,
-    pub max_requests_per_ip: i16,
+    pub max_requests_per_ip: u16,
     pub default_charts: Vec<DefaultChartTemplate>,
     pub hide_in_plugin_list: bool,
 }
@@ -49,7 +49,7 @@ pub async fn find_by_url<C: ConnectionLike + AsyncCommands>(
 
 pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
-    id: i16,
+    id: u16,
 ) -> Result<Option<Software>, redis::RedisError> {
     // TODO: Cache result since it hardly ever changes
     let software: HashMap<String, String> = con.hgetall(format!("software:{}", id)).await?;
@@ -75,13 +75,13 @@ pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
 
 async fn find_all_software_ids<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
-) -> Result<HashSet<i16>, redis::RedisError> {
+) -> Result<HashSet<u16>, redis::RedisError> {
     con.smembers("software.ids").await
 }
 
 async fn _find_software_id_by_url<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
     url: &str,
-) -> Result<Option<i16>, redis::RedisError> {
+) -> Result<Option<u16>, redis::RedisError> {
     con.get(format!("software.index.id.url:{}", url)).await
 }

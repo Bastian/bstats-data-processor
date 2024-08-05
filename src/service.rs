@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Service {
-    pub id: i32,
+    pub id: u32,
     pub name: String,
     pub owner: String,
-    pub software_id: i16,
+    pub software_id: u16,
     pub global: bool,
-    pub charts: Vec<i64>,
+    pub charts: Vec<u64>,
 }
 
 pub async fn find_all<C: ConnectionLike + AsyncCommands>(
@@ -44,7 +44,7 @@ pub async fn find_by_software_url_and_name<C: ConnectionLike + AsyncCommands>(
 
 pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
-    id: i32,
+    id: u32,
 ) -> Result<Option<Service>, redis::RedisError> {
     let service: HashMap<String, String> = con.hgetall(format!("plugins:{}", id)).await?;
     if service.is_empty() {
@@ -63,7 +63,7 @@ pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
 
 async fn find_all_service_ids<C: ConnectionLike + AsyncCommands>(
     con: &mut C,
-) -> Result<HashSet<i32>, redis::RedisError> {
+) -> Result<HashSet<u32>, redis::RedisError> {
     con.smembers("plugins.ids").await
 }
 
@@ -71,7 +71,7 @@ async fn _find_service_id_by_software_url_and_name<C: ConnectionLike + AsyncComm
     con: &mut C,
     software_url: &str,
     name: &str,
-) -> Result<Option<i32>, redis::RedisError> {
+) -> Result<Option<u32>, redis::RedisError> {
     con.get(format!(
         "plugins.index.id.url+name:{}.{}",
         software_url,

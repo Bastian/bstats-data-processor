@@ -27,7 +27,7 @@ pub struct SubmitDataSchema {
 #[skip_serializing_none]
 #[derive(Debug, Validate, Deserialize)]
 pub struct SubmitDataServiceSchema {
-    pub id: i32,
+    pub id: u32,
     #[serde(rename = "customCharts")]
     pub custom_charts: Option<Vec<SubmitDataChartSchema>>,
 
