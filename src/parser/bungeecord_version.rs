@@ -7,7 +7,7 @@ use super::Parser;
 pub struct BungeecordVersionParser;
 
 impl Parser for BungeecordVersionParser {
-    fn parse(&self, schema: SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
         let version = schema
             .extra
             .get("bungeecordVersion")

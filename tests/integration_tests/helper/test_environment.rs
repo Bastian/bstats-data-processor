@@ -31,6 +31,7 @@ impl TestEnvironment {
         environment
             .add_service(get_bungeecord_global_service())
             .await;
+        environment.add_service(get_generic_bukkit_service()).await;
         environment
     }
 
@@ -404,5 +405,16 @@ pub fn get_bungeecord_global_service() -> Service {
         software_id: 2,
         global: true,
         charts: vec![21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+    }
+}
+
+pub fn get_generic_bukkit_service() -> Service {
+    Service {
+        id: 3,
+        name: String::from("My fancy Bukkit plugin"),
+        owner: String::from("JaneDoe"),
+        software_id: 1,
+        global: false,
+        charts: vec![32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
     }
 }

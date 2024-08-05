@@ -9,7 +9,7 @@ use super::Parser;
 pub struct JavaVersionParser;
 
 impl Parser for JavaVersionParser {
-    fn parse(&self, schema: SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
         let java_version = schema.extra.get("javaVersion").and_then(|v| v.as_str())?;
         let major_version = get_java_major_version(java_version);
         Some(json!(DrilldownPie {

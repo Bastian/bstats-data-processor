@@ -1,9 +1,11 @@
 use std::str::FromStr;
 
 use crate::date_util::date_to_tms2000;
+use crate::parser;
 use crate::ratelimits::is_ratelimited;
 use crate::service;
 use crate::software;
+use crate::submit_data_schema::SubmitDataChartSchema;
 use crate::submit_data_schema::SubmitDataSchema;
 use crate::submit_data_schema::SubmitDataServiceSchema;
 use crate::util::geo_ip;
@@ -22,13 +24,7 @@ pub async fn handle_data_submission(
         .await
         .map_err(error::ErrorInternalServerError)?;
 
-    let software = software::find_by_url(&mut con, software_url.as_str()).await;
-
-    if software.is_err() {
-        return Err(error::ErrorInternalServerError(software.err().unwrap()));
-    }
-
-    let software = match software {
+    let software = match software::find_by_url(&mut con, software_url.as_str()).await {
         Ok(None) => return Err(error::ErrorNotFound("Software not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -53,6 +49,9 @@ pub async fn handle_data_submission(
         return Err(error::ErrorTooManyRequests("Too many requests"));
     }
 
+    // Global services are "fake" requests. We just recursively call this method
+    // again, but with the data for the global service. Ratelimits ensure that
+    // this only happens once per server.
     if !is_global_service && software.global_plugin.is_some() {
         let global_plugin = software.global_plugin.unwrap();
         let global_plugin = service::find_by_id(&mut con, global_plugin).await;
@@ -67,9 +66,9 @@ pub async fn handle_data_submission(
                 redis,
                 software_url,
                 SubmitDataSchema {
-                    server_uuid: data.server_uuid,
-                    metrics_version: data.metrics_version,
-                    extra: data.extra,
+                    server_uuid: data.server_uuid.clone(),
+                    metrics_version: data.metrics_version.clone(),
+                    extra: data.extra.clone(),
                     service: SubmitDataServiceSchema {
                         id: global_plugin.id,
                         custom_charts: None,
@@ -92,10 +91,43 @@ pub async fn handle_data_submission(
         }
     }
 
+    let service = match service::find_by_id(&mut con, data.service.id).await {
+        Ok(None) => return Err(error::ErrorNotFound("Service not found")),
+        Err(e) => return Err(error::ErrorInternalServerError(e)),
+        Ok(Some(s)) => s,
+    };
+
+    if service.global && !is_global_service {
+        return Err(error::ErrorBadRequest(
+            "You must not send data for global services",
+        ));
+    }
+
     let _country = match FromStr::from_str(&ip) {
         Ok(ip) => geo_ip::get_country(ip),
         _ => None,
     };
+
+    let default_charts: Vec<_> = software
+        .default_charts
+        .iter()
+        .filter_map(|template| {
+            parser::get_parser(template).and_then(|parser| {
+                Some(SubmitDataChartSchema {
+                    chart_id: template.id.clone(),
+                    data: parser.parse(&data)?,
+                    trusted: true,
+                })
+            })
+        })
+        .collect();
+
+    let custom_charts = data.service.custom_charts.unwrap_or(Vec::new());
+    let charts = default_charts.iter().chain(custom_charts.iter());
+
+    for _chart in charts {
+        // TODO: Implement this
+    }
 
     // TODO: This does not make sense, it's only here for testing
     Ok(web::Json(software))

@@ -8,7 +8,7 @@ use super::Parser;
 pub struct BukkitMinecraftVersionParser;
 
 impl Parser for BukkitMinecraftVersionParser {
-    fn parse(&self, schema: SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
         let version = parse_bukkit_minecraft_version(
             schema
                 .extra

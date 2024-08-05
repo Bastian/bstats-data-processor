@@ -35,7 +35,7 @@ async fn test_submit_data() {
                 "coreCount": 24,
                 "service": {
                     "pluginVersion": "1.0.0-SNAPSHOT",
-                    "id": 1234,
+                    "id": 3,
                     "customCharts": [
                     {
                         "chartId": "chart_id",

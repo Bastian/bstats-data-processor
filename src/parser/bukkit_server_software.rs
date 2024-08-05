@@ -8,7 +8,7 @@ use super::Parser;
 pub struct BukkitServerSoftwareParser;
 
 impl Parser for BukkitServerSoftwareParser {
-    fn parse(&self, schema: SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
         let software_name = parse_bukkit_server_software(
             schema
                 .extra
