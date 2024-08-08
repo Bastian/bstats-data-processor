@@ -1,4 +1,5 @@
 pub mod helper;
+pub mod test_charts;
 pub mod test_ratelimits;
 pub mod test_service;
 pub mod test_software;

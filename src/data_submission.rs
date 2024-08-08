@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use crate::chart_updater::update_chart;
+use crate::charts;
 use crate::date_util::date_to_tms2000;
 use crate::parser;
 use crate::ratelimits::is_ratelimited;
@@ -12,20 +14,22 @@ use crate::submit_data_schema::SubmitDataServiceSchema;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
 use actix_web::{error, web, HttpRequest, Responder};
+use once_cell::sync::Lazy;
 
 pub async fn handle_data_submission(
-    request: HttpRequest,
-    redis: web::Data<redis::Client>,
-    software_url: web::Path<String>,
-    data: SubmitDataSchema,
+    con: &mut redis::aio::ConnectionManager,
+    request: &HttpRequest,
+    redis: &web::Data<redis::Client>,
+    software_url: &str,
+    data: &SubmitDataSchema,
     is_global_service: bool,
 ) -> actix_web::Result<impl Responder> {
-    let mut con = redis
-        .get_connection_manager()
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+    if has_blocked_words(&data) {
+        // Block silently
+        return Ok("");
+    }
 
-    let software = match software::find_by_url(&mut con, software_url.as_str()).await {
+    let software = match software::find_by_url(con, software_url).await {
         Ok(None) => return Err(error::ErrorNotFound("Software not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -36,8 +40,8 @@ pub async fn handle_data_submission(
     let ip = ip_parser::get_ip(&request)?;
 
     let ratelimit = is_ratelimited(
-        &mut con,
-        software_url.as_str(),
+        con,
+        software_url,
         software.max_requests_per_ip,
         &data.server_uuid,
         &ip,
@@ -55,7 +59,7 @@ pub async fn handle_data_submission(
     // this only happens once per server.
     if !is_global_service && software.global_plugin.is_some() {
         let global_plugin = software.global_plugin.unwrap();
-        let global_plugin = service::find_by_id(&mut con, global_plugin).await;
+        let global_plugin = service::find_by_id(con, global_plugin).await;
         let global_plugin = match global_plugin {
             Ok(o) => o,
             Err(e) => return Err(error::ErrorInternalServerError(e)),
@@ -63,10 +67,11 @@ pub async fn handle_data_submission(
 
         if let Some(global_plugin) = global_plugin {
             let result = Box::pin(handle_data_submission(
+                con,
                 request,
                 redis,
                 software_url,
-                SubmitDataSchema {
+                &SubmitDataSchema {
                     server_uuid: data.server_uuid.clone(),
                     metrics_version: data.metrics_version.clone(),
                     extra: data.extra.clone(),
@@ -93,7 +98,7 @@ pub async fn handle_data_submission(
         }
     }
 
-    let service = match service::find_by_id(&mut con, data.service.id).await {
+    let service = match service::find_by_id(con, data.service.id).await {
         Ok(None) => return Err(error::ErrorNotFound("Service not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -110,7 +115,10 @@ pub async fn handle_data_submission(
         _ => None,
     };
 
-    let country_name = country.and_then(|(_, c)| c);
+    let (country_iso, country_name) = match country {
+        Some((iso, country)) => (Some(iso), country),
+        None => (None, None),
+    };
 
     let default_charts: Vec<_> = software
         .default_charts
@@ -126,13 +134,62 @@ pub async fn handle_data_submission(
         })
         .collect();
 
-    let custom_charts = data.service.custom_charts.unwrap_or(Vec::new());
-    let charts = default_charts.iter().chain(custom_charts.iter());
+    let custom_charts = data.service.custom_charts.clone().unwrap_or(Vec::new());
+    let chart_data = default_charts.iter().chain(custom_charts.iter());
 
-    for _chart in charts {
-        // TODO: Implement this
+    let resolved_charts: std::collections::HashMap<u64, Option<charts::Chart>> =
+        charts::find_by_ids(con, service.charts).await.unwrap();
+
+    let mut pipeline = redis::pipe();
+
+    for chart_data in chart_data {
+        let service_chart: &charts::Chart = match resolved_charts
+            .values()
+            .filter_map(|c| c.as_ref())
+            .find(|c| c.id_custom == chart_data.chart_id)
+        {
+            Some(c) => c,
+            None => continue,
+        };
+
+        if !chart_data.trusted && service_chart.default {
+            // The service is trying to trick us and sent a default chart as a custom chart
+            continue;
+        }
+
+        let _ = update_chart(
+            service_chart,
+            chart_data,
+            tms2000,
+            country_iso.as_deref(),
+            &mut pipeline,
+        );
     }
 
-    // TODO: This does not make sense, it's only here for testing
-    Ok(web::Json(software))
+    pipeline
+        .query_async(con)
+        .await
+        .map_err(error::ErrorInternalServerError)?;
+
+    Ok("")
+}
+
+static WORD_BLOCKLIST: Lazy<Vec<String>> = Lazy::new(|| {
+    let word_blocklist = std::env::var("WORD_BLOCKLIST").unwrap_or(String::from("[]"));
+    match serde_json::from_str(&word_blocklist) {
+        Ok(blocklist) => blocklist,
+        Err(_) => Vec::new(),
+    }
+});
+
+fn has_blocked_words(data: &SubmitDataSchema) -> bool {
+    let mut blocked = false;
+    for word in WORD_BLOCKLIST.iter() {
+        // TODO: This is a very inefficient way to check for blocked words
+        if serde_json::to_string(&data).unwrap().contains(word) {
+            blocked = true;
+            break;
+        }
+    }
+    blocked
 }

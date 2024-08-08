@@ -1,5 +1,8 @@
 use data_processor::{
-    charts::chart::{ChartType, DefaultChartTemplate},
+    charts::{
+        chart::{ChartType, DefaultChartTemplate},
+        Chart,
+    },
     service::Service,
     software::Software,
 };
@@ -12,6 +15,7 @@ pub struct TestEnvironment {
     redis_testcontainer: RedisTestcontainer,
     software: Vec<Software>,
     services: Vec<Service>,
+    charts: Vec<Chart>,
 }
 
 impl TestEnvironment {
@@ -20,6 +24,7 @@ impl TestEnvironment {
             redis_testcontainer: RedisTestcontainer::new().await,
             software: Vec::new(),
             services: Vec::new(),
+            charts: Vec::new(),
         }
     }
 
@@ -27,7 +32,11 @@ impl TestEnvironment {
         let mut environment: TestEnvironment = Self::empty().await;
         environment.add_software(get_bukkit_software()).await;
         environment.add_software(get_bungeecord_software()).await;
-        environment.add_service(get_bukkit_global_service()).await;
+        let (global_bukkit_service, global_bukkit_charts) = get_bukkit_global_service();
+        environment.add_service(global_bukkit_service).await;
+        for chart in global_bukkit_charts {
+            environment.add_chart(chart).await;
+        }
         environment
             .add_service(get_bungeecord_global_service())
             .await;
@@ -128,6 +137,55 @@ impl TestEnvironment {
         self.services.push(cloned_service);
     }
 
+    pub async fn add_chart(&mut self, chart: Chart) {
+        let mut con: redis::aio::MultiplexedConnection = self.redis_multiplexed_connection().await;
+
+        let _: () = con.sadd("charts.uids", chart.id).await.unwrap();
+        let _: () = con
+            .set(
+                format!(
+                    "charts.index.uid.pluginId+chartId:{}.{}",
+                    chart.service_id, chart.id_custom
+                ),
+                chart.id,
+            )
+            .await
+            .unwrap();
+
+        let cloned_chart = chart.clone();
+
+        let _: () = con
+            .hset_multiple(
+                format!("charts:{}", chart.id),
+                &vec![
+                    ("id", chart.id_custom.to_string()),
+                    ("pluginId", chart.service_id.to_string()),
+                    (
+                        "type",
+                        serde_json::to_string(&chart.r#type)
+                            .unwrap()
+                            .trim_matches('"')
+                            .to_string(),
+                    ),
+                    ("position", chart.position.to_string()),
+                    ("title", chart.title),
+                    (
+                        "default",
+                        if chart.default {
+                            String::from("1")
+                        } else {
+                            String::from("0")
+                        },
+                    ),
+                    ("data", serde_json::to_string(&chart.data).unwrap()),
+                ],
+            )
+            .await
+            .unwrap();
+
+        self.charts.push(cloned_chart);
+    }
+
     pub fn redis_client(&self) -> &redis::Client {
         &self.redis_testcontainer.client()
     }
@@ -138,6 +196,10 @@ impl TestEnvironment {
 
     pub fn services(&self) -> &Vec<Service> {
         &self.services
+    }
+
+    pub fn charts(&self) -> &Vec<Chart> {
+        &self.charts
     }
 
     pub async fn redis_multiplexed_connection(&self) -> redis::aio::MultiplexedConnection {
@@ -386,15 +448,23 @@ pub fn get_bungeecord_software() -> Software {
     }
 }
 
-pub fn get_bukkit_global_service() -> Service {
-    Service {
+pub fn get_bukkit_global_service() -> (Service, Vec<Chart>) {
+    let service = Service {
         id: 1,
         name: String::from("_bukkit_"),
         owner: String::from("Admin"),
         software_id: 1,
         global: true,
         charts: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 38279],
-    }
+    };
+
+    let charts = vec![
+        get_line_chart(service.id, 1, String::from("servers")),
+        get_line_chart(service.id, 2, String::from("players")),
+        // TODO Draw the rest of the owl
+    ];
+
+    (service, charts)
 }
 
 pub fn get_bungeecord_global_service() -> Service {
@@ -416,5 +486,25 @@ pub fn get_generic_bukkit_service() -> Service {
         software_id: 1,
         global: false,
         charts: vec![32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
+    }
+}
+
+pub fn get_line_chart(service_id: u32, id: u64, id_custom: String) -> Chart {
+    Chart {
+        id,
+        id_custom,
+        r#type: ChartType::SingleLineChart,
+        position: 0,
+        title: String::from("My fancy line chart"),
+        default: false,
+        data: json!({
+            "lineName": "My fancy line",
+            "filter": {
+                "enabled": true,
+                "maxValue": 1000,
+                "minValue": 0
+            }
+        }),
+        service_id,
     }
 }

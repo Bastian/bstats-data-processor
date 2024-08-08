@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use serde_json::Value;
 use serde_with::skip_serializing_none;
 use validator::Validate;
 
 #[skip_serializing_none]
-#[derive(Debug, Validate, Deserialize)]
+#[derive(Debug, Validate, Deserialize, Serialize, Clone)]
 pub struct SubmitDataSchema {
     #[validate(length(min = 1))]
     #[serde(rename = "serverUUID")]
@@ -25,7 +25,7 @@ pub struct SubmitDataSchema {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Validate, Deserialize)]
+#[derive(Debug, Validate, Deserialize, Serialize, Clone)]
 pub struct SubmitDataServiceSchema {
     pub id: u32,
     #[serde(rename = "customCharts")]
@@ -36,7 +36,7 @@ pub struct SubmitDataServiceSchema {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Validate, Deserialize)]
+#[derive(Debug, Validate, Deserialize, Serialize, Clone)]
 pub struct SubmitDataChartSchema {
     #[validate(length(min = 1))]
     #[serde(rename = "chartId")]

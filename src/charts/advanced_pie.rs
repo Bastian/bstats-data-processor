@@ -4,6 +4,6 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Validate, Deserialize, Serialize)]
-pub struct DrilldownPie {
-    pub values: HashMap<String, HashMap<String, u16>>,
+pub struct AdvancedPie {
+    pub values: HashMap<String, u16>,
 }

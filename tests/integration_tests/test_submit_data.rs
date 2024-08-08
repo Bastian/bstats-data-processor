@@ -2,7 +2,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use actix_web::{http::header::ContentType, test, web, App};
 use data_processor::submit_data;
-use serde_json::{json, Value};
+use serde_json::json;
 
 use crate::helper::test_environment::TestEnvironment;
 
@@ -55,6 +55,6 @@ async fn test_submit_data() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
 
-    let body: Value = test::read_body_json(resp).await;
-    assert_eq!(body["name"], "Bukkit / Spigot");
+    let body = test::read_body(resp).await;
+    assert_eq!(body, "");
 }
