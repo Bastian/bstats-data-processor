@@ -8,7 +8,7 @@ pub mod single_line_chart;
 use std::collections::HashMap;
 
 use chart::ChartType;
-use redis::{aio::ConnectionLike, AsyncCommands};
+use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -31,7 +31,7 @@ static CHART_FIELDS: (&str, &str, &str, &str, &str, &str, &str) = (
 /// Find all charts with the given IDs.
 ///
 /// Using this function is more efficient than calling `find_by_id` multiple times.
-pub async fn find_by_ids<C: ConnectionLike + AsyncCommands>(
+pub async fn find_by_ids<C: AsyncCommands>(
     con: &mut C,
     ids: Vec<u64>,
 ) -> Result<HashMap<u64, Option<Chart>>, redis::RedisError> {
@@ -78,7 +78,7 @@ pub async fn find_by_ids<C: ConnectionLike + AsyncCommands>(
     Ok(result)
 }
 
-pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
+pub async fn find_by_id<C: AsyncCommands>(
     con: &mut C,
     id: u64,
 ) -> Result<Option<Chart>, redis::RedisError> {

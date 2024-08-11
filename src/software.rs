@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 extern crate redis;
-use redis::{aio::ConnectionLike, AsyncCommands};
+use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 
 use crate::charts::chart::DefaultChartTemplate;
@@ -18,9 +18,7 @@ pub struct Software {
     pub hide_in_plugin_list: bool,
 }
 
-pub async fn find_all<C: ConnectionLike + AsyncCommands>(
-    con: &mut C,
-) -> Result<Vec<Software>, redis::RedisError> {
+pub async fn find_all<C: AsyncCommands>(con: &mut C) -> Result<Vec<Software>, redis::RedisError> {
     // TODO: Cache result since it hardly ever changes
     let software_ids = find_all_software_ids(con).await?;
     let mut software = Vec::new();
@@ -35,7 +33,7 @@ pub async fn find_all<C: ConnectionLike + AsyncCommands>(
     Ok(software)
 }
 
-pub async fn find_by_url<C: ConnectionLike + AsyncCommands>(
+pub async fn find_by_url<C: AsyncCommands>(
     con: &mut C,
     url: &str,
 ) -> Result<Option<Software>, redis::RedisError> {
@@ -47,7 +45,7 @@ pub async fn find_by_url<C: ConnectionLike + AsyncCommands>(
     find_by_id(con, id.unwrap()).await
 }
 
-pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
+pub async fn find_by_id<C: AsyncCommands>(
     con: &mut C,
     id: u16,
 ) -> Result<Option<Software>, redis::RedisError> {
@@ -73,13 +71,13 @@ pub async fn find_by_id<C: ConnectionLike + AsyncCommands>(
     }))
 }
 
-async fn find_all_software_ids<C: ConnectionLike + AsyncCommands>(
+async fn find_all_software_ids<C: AsyncCommands>(
     con: &mut C,
 ) -> Result<HashSet<u16>, redis::RedisError> {
     con.smembers("software.ids").await
 }
 
-async fn _find_software_id_by_url<C: ConnectionLike + AsyncCommands>(
+async fn _find_software_id_by_url<C: AsyncCommands>(
     con: &mut C,
     url: &str,
 ) -> Result<Option<u16>, redis::RedisError> {

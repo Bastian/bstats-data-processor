@@ -1,6 +1,6 @@
-use redis::{aio::ConnectionLike, AsyncCommands};
+use redis::AsyncCommands;
 
-pub async fn is_ratelimited<C: ConnectionLike + AsyncCommands>(
+pub async fn is_ratelimited<C: AsyncCommands>(
     con: &mut C,
     software_url: &str,
     max_requests_per_ip: u16,
@@ -34,7 +34,7 @@ pub async fn is_ratelimited<C: ConnectionLike + AsyncCommands>(
     return Ok(false);
 }
 
-async fn _is_ratelimited<C: ConnectionLike + AsyncCommands>(
+async fn _is_ratelimited<C: AsyncCommands>(
     con: &mut C,
     identifier: &str,
     software_url: &str,
