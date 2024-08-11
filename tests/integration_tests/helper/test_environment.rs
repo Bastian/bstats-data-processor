@@ -5,7 +5,9 @@ use data_processor::{
     },
     service::Service,
     software::Software,
+    util::redis::RedisClusterPool,
 };
+use deadpool_redis::cluster::Connection;
 use redis::AsyncCommands;
 use serde_json::json;
 
@@ -45,7 +47,7 @@ impl TestEnvironment {
     }
 
     pub async fn add_software(&mut self, software: Software) {
-        let mut con: redis::aio::MultiplexedConnection = self.redis_multiplexed_connection().await;
+        let mut con = self.redis_connection().await;
 
         let _: () = con.sadd("software.ids", software.id).await.unwrap();
         let _: () = con
@@ -91,7 +93,7 @@ impl TestEnvironment {
     }
 
     pub async fn add_service(&mut self, service: Service) {
-        let mut con: redis::aio::MultiplexedConnection = self.redis_multiplexed_connection().await;
+        let mut con = self.redis_connection().await;
 
         let software = self
             .software
@@ -138,7 +140,7 @@ impl TestEnvironment {
     }
 
     pub async fn add_chart(&mut self, chart: Chart) {
-        let mut con: redis::aio::MultiplexedConnection = self.redis_multiplexed_connection().await;
+        let mut con = self.redis_connection().await;
 
         let _: () = con.sadd("charts.uids", chart.id).await.unwrap();
         let _: () = con
@@ -186,8 +188,8 @@ impl TestEnvironment {
         self.charts.push(cloned_chart);
     }
 
-    pub fn redis_client(&self) -> &redis::Client {
-        &self.redis_testcontainer.client()
+    pub fn redis_pool(&self) -> &RedisClusterPool {
+        &self.redis_testcontainer.pool()
     }
 
     pub fn software(&self) -> &Vec<Software> {
@@ -202,11 +204,8 @@ impl TestEnvironment {
         &self.charts
     }
 
-    pub async fn redis_multiplexed_connection(&self) -> redis::aio::MultiplexedConnection {
-        self.redis_client()
-            .get_multiplexed_tokio_connection()
-            .await
-            .unwrap()
+    pub async fn redis_connection(&self) -> Connection {
+        self.redis_pool().get().await.unwrap()
     }
 }
 

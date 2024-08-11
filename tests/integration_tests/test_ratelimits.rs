@@ -6,7 +6,7 @@ use crate::helper::test_environment::TestEnvironment;
 async fn test_check_ratelimits() {
     let test_environment = TestEnvironment::empty().await;
 
-    let mut con = test_environment.redis_multiplexed_connection().await;
+    let mut con = test_environment.redis_connection().await;
 
     let software_url = "bukkit";
     let max_requests_per_ip = 3;

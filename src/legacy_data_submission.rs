@@ -11,6 +11,7 @@ use crate::{
     data_submission::handle_data_submission,
     service,
     submit_data_schema::{SubmitDataChartSchema, SubmitDataSchema, SubmitDataServiceSchema},
+    util::redis::RedisClusterPool,
 };
 
 #[skip_serializing_none]
@@ -47,12 +48,16 @@ pub struct LegacySubmitDataServiceSchema {
 }
 
 pub async fn handle_legacy_data_submission(
-    con: &mut redis::aio::ConnectionManager,
     request: &HttpRequest,
-    redis: &web::Data<redis::Client>,
+    redis_pool: &web::Data<RedisClusterPool>,
     software_url: &str,
     data: LegacySubmitDataSchema,
 ) -> actix_web::Result<impl Responder> {
+    let mut con = match redis_pool.get().await {
+        Ok(con) => con,
+        Err(e) => return Err(error::ErrorInternalServerError(e)),
+    };
+
     for plugin in data.plugins {
         let plugin_id = match plugin.id {
             Some(id) => id,
@@ -63,7 +68,8 @@ pub async fn handle_legacy_data_submission(
                     None => continue,
                 };
 
-                match service::find_by_software_url_and_name(con, software_url, &plugin_name).await
+                match service::find_by_software_url_and_name(&mut con, software_url, &plugin_name)
+                    .await
                 {
                     Ok(None) => continue,
                     Ok(Some(plugin)) => plugin.id,
@@ -73,9 +79,8 @@ pub async fn handle_legacy_data_submission(
         };
 
         let _ = handle_data_submission(
-            con,
             &request,
-            &redis,
+            &redis_pool,
             software_url,
             &SubmitDataSchema {
                 server_uuid: data.server_uuid.clone(),

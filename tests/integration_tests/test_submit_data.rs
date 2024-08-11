@@ -10,11 +10,11 @@ use crate::helper::test_environment::TestEnvironment;
 async fn test_submit_data() {
     let test_environment = TestEnvironment::with_data().await;
 
-    let redis = test_environment.redis_client();
+    let redis_pool = test_environment.redis_pool();
 
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(redis.clone()))
+            .app_data(web::Data::new(redis_pool.clone()))
             .service(submit_data),
     )
     .await;

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use redis::AsyncCommands;
+
 use crate::{
     charts::{
         advanced_pie::AdvancedPie,
@@ -14,12 +16,14 @@ use crate::{
     submit_data_schema::SubmitDataChartSchema,
 };
 
-pub fn update_chart(
+pub async fn update_chart<C: AsyncCommands>(
     chart: &Chart,
     data: &SubmitDataChartSchema,
     tms2000: i64,
     country_iso: Option<&str>,
+    // Used where possible (currently not possible for line charts)
     pipeline: &mut redis::Pipeline,
+    con: &mut C,
 ) -> Result<(), serde_json::Error> {
     match chart.r#type {
         ChartType::SingleLineChart => {
@@ -36,7 +40,7 @@ pub fn update_chart(
             if should_block {
                 return Ok(());
             }
-            update_line_chart_data(chart.id, tms2000, "1", data.value, pipeline);
+            update_line_chart_data(chart.id, tms2000, "1", data.value, con).await;
         }
         ChartType::SimplePie => {
             let data: SimplePie = serde_json::from_value(data.data.clone())?;
@@ -115,7 +119,7 @@ pub fn update_pie_data(
     value: u16,
     pipeline: &mut redis::Pipeline,
 ) {
-    let key = format!("data:{}.{}.{}", service_id, chart_id, tms2000);
+    let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
     pipeline.zincr(&key, value_name, value);
     pipeline.expire(&key, 60 * 61);
 }
@@ -132,15 +136,22 @@ pub fn update_map_data(
     update_pie_data(service_id, chart_id, tms2000, value_name, value, pipeline);
 }
 
-pub fn update_line_chart_data(
+pub async fn update_line_chart_data<C: AsyncCommands>(
     chart_id: u64,
     tms2000: i64,
     line: &str,
     value: i16,
-    pipeline: &mut redis::Pipeline,
+    con: &mut C,
 ) {
-    let key = format!("data:{}.{}", chart_id, line);
-    pipeline.hincr(key, tms2000_to_timestamp(tms2000), value);
+    let key = format!("data:{{{}}}.{}", chart_id, line);
+    match con.hincr(key, tms2000_to_timestamp(tms2000), value).await {
+        Ok(()) => (),
+        Err(e) => {
+            // TODO Proper logging framework
+            eprintln!("Failed to update line chart data: {}", e);
+            ()
+        }
+    }
 }
 
 pub fn update_drilldown_pie_data(
@@ -155,13 +166,13 @@ pub fn update_drilldown_pie_data(
     for (value_key, value) in values.iter() {
         total_value += value;
         let key = format!(
-            "data:{}.{}.{}.{}",
+            "data:{{{}}}.{}.{}.{}",
             service_id, chart_id, tms2000, value_name
         );
         pipeline.zincr(&key, value_key, value);
         pipeline.expire(&key, 60 * 61);
     }
-    let key = format!("data:{}.{}.{}", service_id, chart_id, tms2000);
+    let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
     pipeline.zincr(&key, value_name, total_value);
     pipeline.expire(&key, 60 * 61);
 }

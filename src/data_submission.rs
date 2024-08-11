@@ -13,13 +13,13 @@ use crate::submit_data_schema::SubmitDataSchema;
 use crate::submit_data_schema::SubmitDataServiceSchema;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
+use crate::util::redis::RedisClusterPool;
 use actix_web::{error, web, HttpRequest, Responder};
 use once_cell::sync::Lazy;
 
 pub async fn handle_data_submission(
-    con: &mut redis::aio::ConnectionManager,
     request: &HttpRequest,
-    redis: &web::Data<redis::Client>,
+    redis_pool: &web::Data<RedisClusterPool>,
     software_url: &str,
     data: &SubmitDataSchema,
     is_global_service: bool,
@@ -29,7 +29,12 @@ pub async fn handle_data_submission(
         return Ok("");
     }
 
-    let software = match software::find_by_url(con, software_url).await {
+    let mut con = match redis_pool.get().await {
+        Ok(con) => con,
+        Err(e) => return Err(error::ErrorInternalServerError(e)),
+    };
+
+    let software = match software::find_by_url(&mut con, software_url).await {
         Ok(None) => return Err(error::ErrorNotFound("Software not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -40,7 +45,7 @@ pub async fn handle_data_submission(
     let ip = ip_parser::get_ip(&request)?;
 
     let ratelimit = is_ratelimited(
-        con,
+        &mut con,
         software_url,
         software.max_requests_per_ip,
         &data.server_uuid,
@@ -59,7 +64,7 @@ pub async fn handle_data_submission(
     // this only happens once per server.
     if !is_global_service && software.global_plugin.is_some() {
         let global_plugin = software.global_plugin.unwrap();
-        let global_plugin = service::find_by_id(con, global_plugin).await;
+        let global_plugin = service::find_by_id(&mut con, global_plugin).await;
         let global_plugin = match global_plugin {
             Ok(o) => o,
             Err(e) => return Err(error::ErrorInternalServerError(e)),
@@ -67,9 +72,8 @@ pub async fn handle_data_submission(
 
         if let Some(global_plugin) = global_plugin {
             let result = Box::pin(handle_data_submission(
-                con,
                 request,
-                redis,
+                redis_pool,
                 software_url,
                 &SubmitDataSchema {
                     server_uuid: data.server_uuid.clone(),
@@ -98,7 +102,7 @@ pub async fn handle_data_submission(
         }
     }
 
-    let service = match service::find_by_id(con, data.service.id).await {
+    let service = match service::find_by_id(&mut con, data.service.id).await {
         Ok(None) => return Err(error::ErrorNotFound("Service not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -138,7 +142,7 @@ pub async fn handle_data_submission(
     let chart_data = default_charts.iter().chain(custom_charts.iter());
 
     let resolved_charts: std::collections::HashMap<u64, Option<charts::Chart>> =
-        charts::find_by_ids(con, service.charts).await.unwrap();
+        charts::find_by_ids(&mut con, service.charts).await.unwrap();
 
     let mut pipeline = redis::pipe();
 
@@ -163,11 +167,13 @@ pub async fn handle_data_submission(
             tms2000,
             country_iso.as_deref(),
             &mut pipeline,
-        );
+            &mut con,
+        )
+        .await;
     }
 
     pipeline
-        .query_async(con)
+        .query_async(&mut con)
         .await
         .map_err(error::ErrorInternalServerError)?;
 

@@ -24,65 +24,58 @@ pub struct Chart {
     pub service_id: u32,
 }
 
-static CHART_FIELDS: (&str, &str, &str, &str, &str, &str, &str) = (
-    "id", "type", "position", "title", "default", "data", "pluginId",
-);
-
 /// Find all charts with the given IDs.
-///
-/// Using this function is more efficient than calling `find_by_id` multiple times.
 pub async fn find_by_ids<C: AsyncCommands>(
     con: &mut C,
     ids: Vec<u64>,
 ) -> Result<HashMap<u64, Option<Chart>>, redis::RedisError> {
-    let mut pipeline = redis::pipe();
-    for id in &ids {
-        pipeline.hget(format!("charts:{}", id), CHART_FIELDS);
+    // TODO: Move all charts from a single service in a single hash and use pipelining
+    let mut response = HashMap::new();
+    for id in ids {
+        response.insert(id, find_by_id(con, id).await?);
     }
-    let charts: Vec<[Option<String>; 7]> = pipeline.query_async(con).await.unwrap();
-
-    let mut result: HashMap<u64, Option<Chart>> = HashMap::new();
-    for (i, values) in charts.iter().enumerate() {
-        let id = ids[i];
-
-        fn map_strings(id: u64, values: &[Option<String>; 7]) -> Option<Chart> {
-            Some(Chart {
-                id,
-                id_custom: values[0].as_ref()?.to_string(),
-                r#type: match serde_json::from_str(&format!("\"{}\"", values[1].as_ref()?)) {
-                    Ok(t) => t,
-                    // TODO Log warning
-                    Err(_) => return None,
-                },
-                position: match values[2].as_ref()?.parse() {
-                    Ok(p) => p,
-                    Err(_) => 0,
-                },
-                title: values[3].as_ref()?.to_string(),
-                default: values[4].as_ref().unwrap_or(&String::from("0")) == "1",
-                data: match serde_json::from_str(&values[5].as_ref()?) {
-                    Ok(d) => d,
-                    Err(_) => Value::Null,
-                },
-                service_id: values[6]
-                    .as_ref()?
-                    .parse()
-                    .expect("Chart with non-numeric 'pluginId'"),
-            })
-        }
-
-        let chart = map_strings(id, values);
-        result.insert(id, chart);
-    }
-
-    Ok(result)
+    Ok(response)
 }
 
 pub async fn find_by_id<C: AsyncCommands>(
     con: &mut C,
     id: u64,
 ) -> Result<Option<Chart>, redis::RedisError> {
-    find_by_ids(con, vec![id])
-        .await
-        .map(|mut m| m.remove(&id).unwrap())
+    let map: HashMap<String, String> = con.hgetall(format!("charts:{}", id)).await?;
+
+    if map.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(Chart {
+        id,
+        id_custom: map
+            .get("id")
+            .expect("Chart without 'id_custom'")
+            .to_string(),
+        r#type: match serde_json::from_str(&format!(
+            "\"{}\"",
+            map.get("type").expect("Chart without 'type'")
+        )) {
+            Ok(t) => t,
+            // TODO Log warning
+            Err(_) => return Ok(None),
+        },
+        position: map
+            .get("position")
+            .expect("Chart without 'position'")
+            .parse()
+            .expect("Chart with non-numeric or to small/large 'position"),
+        title: map.get("title").expect("Chart without 'title'").to_string(),
+        default: map.get("default").unwrap_or(&String::from("0")) == "1",
+        data: match serde_json::from_str(map.get("data").expect("Chart without 'data'")) {
+            Ok(d) => d,
+            Err(_) => Value::Null,
+        },
+        service_id: map
+            .get("pluginId")
+            .expect("Chart without 'pluginId'")
+            .parse()
+            .expect("Chart with non-numeric 'pluginId"),
+    }))
 }
