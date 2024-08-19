@@ -11,13 +11,16 @@ async fn main() -> std::io::Result<()> {
 
     let pool = get_redis_cluster_pool().await;
 
-    HttpServer::new(move || {
+    let mut http_server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .service(submit_data)
             .service(legacy_submit_data)
-    })
-    .bind((host, port))?
-    .run()
-    .await
+    });
+
+    if let Ok(workers) = std::env::var("WORKERS") {
+        http_server = http_server.workers(workers.parse().unwrap());
+    }
+
+    http_server.bind((host, port))?.run().await
 }
