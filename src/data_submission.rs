@@ -55,8 +55,10 @@ pub async fn handle_data_submission(
     )
     .await;
 
-    if ratelimit.is_err() {
-        return Err(error::ErrorTooManyRequests("Too many requests"));
+    match ratelimit {
+        Ok(true) => return Err(error::ErrorTooManyRequests("Too many requests")),
+        Err(e) => return Err(error::ErrorInternalServerError(e)),
+        Ok(false) => {}
     }
 
     // Global services are "fake" requests. We just recursively call this method
