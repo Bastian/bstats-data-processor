@@ -78,11 +78,12 @@ fn parse_bukkit_server_software(
             })
         })
         .unwrap_or_else(|| {
-            println!(
-                "Unknown server software: bukkitVersion='{}', bukkitName='{}'",
-                bukkit_version,
-                bukkit_name.unwrap_or("<not set>")
-            );
+            // TODO Use proper logging framework that does not block stdout
+            // println!(
+            //     "Unknown server software: bukkitVersion='{}', bukkitName='{}'",
+            //     bukkit_version,
+            //     bukkit_name.unwrap_or("<not set>")
+            // );
             "Unknown"
         });
 
