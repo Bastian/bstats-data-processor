@@ -50,6 +50,15 @@ static SERVER_SOFTWARE_BRANDS: phf::OrderedMap<&'static str, &'static str> = phf
     "pufferfish" => "Pufferfish", // https://github.com/pufferfish-gg/Pufferfish
     "leaves" => "Leaves", // https://github.com/LeavesMC/Leaves
     "leaf" => "Leaf", // https://github.com/Winds-Studio/Leaf
+    "universespigot" => "UniverseSpigot", // TODO: Find link
+    "advancedslimepaper" => "AdvancedSlimePaper", //github.com/InfernalSuite/AdvancedSlimePaper
+    "carbon" => "Carbon", // https://github.com/InfernalSuite/Carbon
+    "ketting" => "Ketting", // https://github.com/kettingpowered/Ketting-1-20-x
+    "axolotlspigot" => "AxolotlSpigot", // https://www.axolotlspigot.com/
+    "axolotl" => "AxolotlSpigot", // https://www.axolotlspigot.com/
+    "plazma" => "Plazma", // https://github.com/PlazmaMC/PlazmaBukkit
+    "slimeworldmanager" => "SlimeWorldManager", // https://www.spigotmc.org/resources/slimeworldmanager.69974/ EOL: Now AdvancedSlimePaper
+    "divinemc" => "DivineMC", // https://github.com/BX-Team/DivineMC
 };
 
 fn parse_bukkit_server_software(
@@ -194,6 +203,66 @@ mod tests {
                 bukkit_version: String::from("git-Pufferfish-52 (MC: 1.20.4)"),
                 bukkit_name: String::from("Pufferfish"),
                 expected: String::from("Pufferfish"),
+            },
+            TestCase {
+                name: String::from("UniverseSpigot 1.21.4"),
+                bukkit_version: String::from("1.21.4-4f6cdd2 (MC: 1.21.4)"),
+                bukkit_name: String::from("UniverseSpigot"),
+                expected: String::from("UniverseSpigot"),
+            },
+            TestCase {
+                name: String::from("AdvancedSlimePaper 1.21.1"),
+                bukkit_version: String::from("1.21.1-16392-ba950ec (MC: 1.21.1)"),
+                bukkit_name: String::from("AdvancedSlimePaper"),
+                expected: String::from("AdvancedSlimePaper"),
+            },
+            TestCase {
+                name: String::from("Carbon 1.8.8"),
+                bukkit_version: String::from("git-Carbon-\"b98d6e2f\" (MC: 1.8.8)"),
+                bukkit_name: String::from("CraftBukkit"),
+                expected: String::from("Carbon"),
+            },
+            TestCase {
+                name: String::from("Ketting 1.20.1"),
+                bukkit_version: String::from("git-ketting-1.20.1-0.4.14 (MC: 1.20.1)"),
+                bukkit_name: String::from("CraftBukkit"),
+                expected: String::from("Ketting"),
+            },
+            TestCase {
+                name: String::from("AxolotlSpigot 1.20.4"),
+                bukkit_version: String::from("git-Axolotl-\"228c3df\" (MC: 1.20.4)"),
+                bukkit_name: String::from("AxolotlSpigot"),
+                expected: String::from("AxolotlSpigot"),
+            },
+            TestCase {
+                name: String::from("AxolotlSpigot 1.21.1"),
+                bukkit_version: String::from("1.21.1-DEV-393582c (MC: 1.21.1)"),
+                bukkit_name: String::from("Axolotl"),
+                expected: String::from("AxolotlSpigot"),
+            },
+            TestCase {
+                name: String::from("Plazma 1.20.4"),
+                bukkit_version: String::from("git-Plazma-\"3972882\" (MC: 1.20.4)"),
+                bukkit_name: String::from("Plazma"),
+                expected: String::from("Plazma"),
+            },
+            TestCase {
+                name: String::from("SlimeWorldManager 1.20.4"),
+                bukkit_version: String::from("git-SlimeWorldManager-15679 (MC: 1.20.4)"),
+                bukkit_name: String::from("SlimeWorldManager"),
+                expected: String::from("SlimeWorldManager"),
+            },
+            TestCase {
+                name: String::from("DivineMC 1.20.4"),
+                bukkit_version: String::from("git-DivineMC-\"ab0f2e9\" (MC: 1.20.4)"),
+                bukkit_name: String::from("DivineMC"),
+                expected: String::from("DivineMC"),
+            },
+            TestCase {
+                name: String::from("DivineMC 1.21.4"),
+                bukkit_version: String::from("1.21.4-476-c0ca1f9 (MC: 1.21.4)"),
+                bukkit_name: String::from("DivineMC"),
+                expected: String::from("DivineMC"),
             },
         ];
 
