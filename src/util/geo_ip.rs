@@ -1,10 +1,10 @@
 use std::net::IpAddr;
 
-use maxminddb::{geoip2, MaxMindDBError, Reader};
+use maxminddb::{geoip2, MaxMindDbError, Reader};
 use once_cell::sync::Lazy;
 use phf::phf_map;
 
-static READER: Lazy<Result<Reader<Vec<u8>>, MaxMindDBError>> = Lazy::new(|| {
+static READER: Lazy<Result<Reader<Vec<u8>>, MaxMindDbError>> = Lazy::new(|| {
     let file_path =
         std::env::var("GEOIP_DATABASE_PATH").unwrap_or(String::from("GeoLite2-Country.mmdb"));
     let reader = maxminddb::Reader::open_readfile(file_path);
@@ -265,7 +265,11 @@ type IsoCode = String;
 pub fn get_country(ip: IpAddr) -> Option<(IsoCode, Option<CountryName>)> {
     if let Ok(reader) = READER.as_ref() {
         let country: geoip2::Country = match reader.lookup(ip) {
-            Ok(c) => c,
+            Ok(Some(c)) => c,
+            Ok(None) => {
+                eprintln!("No country found for IP {:?}", ip);
+                return None;
+            }
             Err(e) => {
                 eprintln!("Failed to lookup country for IP {:?}: {:?}", ip, e);
                 return None;
