@@ -46,6 +46,10 @@ impl TestEnvironment {
         environment
     }
 
+    pub async fn cleanup(&self) {
+        self.redis_testcontainer.cleanup().await;
+    }
+
     pub async fn add_software(&mut self, software: Software) {
         let mut con = self.redis_connection().await;
 

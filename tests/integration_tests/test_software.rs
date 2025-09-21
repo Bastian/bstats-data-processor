@@ -17,8 +17,7 @@ async fn test_find_all() {
     assert_eq!(software[0].hide_in_plugin_list, false);
 
     // In an empty environment, no data should be returned
-    let empty_test_environment = TestEnvironment::empty().await;
-    let mut con = empty_test_environment.redis_connection().await;
+    test_environment.cleanup().await;
 
     let software: Vec<data_processor::software::Software> = find_all(&mut con).await.unwrap();
     assert_eq!(software.len(), 0);
