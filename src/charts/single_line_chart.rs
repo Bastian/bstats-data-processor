@@ -29,6 +29,6 @@ impl SingleLineChartFilter {
                 }
             }
         }
-        return false;
+        false
     }
 }

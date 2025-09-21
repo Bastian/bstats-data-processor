@@ -11,7 +11,5 @@ pub async fn get_redis_cluster_pool() -> RedisClusterPool {
         .map(String::from)
         .collect::<Vec<_>>();
     let cfg = Config::from_urls(redis_urls);
-    let pool = cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
-
-    return pool;
+    cfg.create_pool(Some(Runtime::Tokio1)).unwrap()
 }

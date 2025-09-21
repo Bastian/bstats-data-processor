@@ -12,7 +12,6 @@ impl Parser for BungeecordVersionParser {
             .extra
             .get("bungeecordVersion")
             .and_then(|v| v.as_str())
-            .as_deref()
             .map(parse_bungeecord_version)?;
         Some(json!(SimplePie { value: version }))
     }

@@ -149,7 +149,6 @@ pub async fn update_line_chart_data<C: AsyncCommands>(
         Err(e) => {
             // TODO Proper logging framework
             eprintln!("Failed to update line chart data: {}", e);
-            ()
         }
     }
 }

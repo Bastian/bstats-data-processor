@@ -58,5 +58,5 @@ pub fn get_parser(
         }));
     }
 
-    return None;
+    None
 }

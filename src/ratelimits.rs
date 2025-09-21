@@ -31,7 +31,7 @@ pub async fn is_ratelimited<C: AsyncCommands>(
     {
         return Ok(true);
     }
-    return Ok(false);
+    Ok(false)
 }
 
 async fn _is_ratelimited<C: AsyncCommands>(
@@ -51,5 +51,5 @@ async fn _is_ratelimited<C: AsyncCommands>(
         .query_async(con)
         .await?;
 
-    return Ok(*request_count.get(0).unwrap() > max_requests_per_ip);
+    Ok(*request_count.first().unwrap() > max_requests_per_ip)
 }

@@ -282,7 +282,7 @@ pub fn get_country(ip: IpAddr) -> Option<(IsoCode, Option<CountryName>)> {
             ISO_COUNTRIES.get(iso_code).map(|s| s.to_string()),
         ));
     }
-    return None;
+    None
 }
 
 #[cfg(test)]

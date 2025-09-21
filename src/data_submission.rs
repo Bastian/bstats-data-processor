@@ -15,8 +15,8 @@ use crate::util::geo_ip;
 use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
 use actix_web::{error, web, HttpRequest, Responder};
-use once_cell::sync::Lazy;
 use deadpool_redis::cluster::Connection;
+use once_cell::sync::Lazy;
 
 pub async fn handle_data_submission(
     request: &HttpRequest,
@@ -26,7 +26,7 @@ pub async fn handle_data_submission(
     is_global_service: bool,
     connection: Option<&mut Connection>,
 ) -> actix_web::Result<impl Responder> {
-    if has_blocked_words(&data) {
+    if has_blocked_words(data) {
         // Block silently
         return Ok("");
     }
@@ -51,7 +51,7 @@ pub async fn handle_data_submission(
 
     let tms2000 = date_to_tms2000(chrono::Utc::now());
 
-    let ip = ip_parser::get_ip(&request)?;
+    let ip = ip_parser::get_ip(request)?;
 
     let ratelimit = is_ratelimited(
         con,
@@ -143,14 +143,14 @@ pub async fn handle_data_submission(
             parser::get_parser(template, country_name.clone()).and_then(|parser| {
                 Some(SubmitDataChartSchema {
                     chart_id: template.id.clone(),
-                    data: parser.parse(&data)?,
+                    data: parser.parse(data)?,
                     trusted: true,
                 })
             })
         })
         .collect();
 
-    let custom_charts = data.service.custom_charts.clone().unwrap_or(Vec::new());
+    let custom_charts = data.service.custom_charts.clone().unwrap_or_default();
     let chart_data = default_charts.iter().chain(custom_charts.iter());
 
     let resolved_charts: std::collections::HashMap<u64, Option<charts::Chart>> =
@@ -194,10 +194,7 @@ pub async fn handle_data_submission(
 
 static WORD_BLOCKLIST: Lazy<Vec<String>> = Lazy::new(|| {
     let word_blocklist = std::env::var("WORD_BLOCKLIST").unwrap_or(String::from("[]"));
-    match serde_json::from_str(&word_blocklist) {
-        Ok(blocklist) => blocklist,
-        Err(_) => Vec::new(),
-    }
+    serde_json::from_str(&word_blocklist).unwrap_or_default()
 });
 
 fn has_blocked_words(data: &SubmitDataSchema) -> bool {

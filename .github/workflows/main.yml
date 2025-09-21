@@ -22,6 +22,8 @@ jobs:
       # Skip the country code test because it requires the GeoIP database
       - run: cargo test --verbose --lib -- --skip util::geo_ip::tests::test_get_country_code
       - run: make test-integration
+      - run: make lint
+      - run: make fmt
   docker:
     runs-on: ubuntu-latest
     needs: test

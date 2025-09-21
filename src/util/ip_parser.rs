@@ -1,7 +1,6 @@
 use actix_web::{error, HttpRequest};
 
 /// Get the IP address of the client making the request.
-
 pub fn get_ip(request: &HttpRequest) -> Result<String, error::Error> {
     let behind_cloudflare =
         std::env::var("BEHIND_CLOUDFLARE_PROXY").unwrap_or(String::from("false")) == "true";

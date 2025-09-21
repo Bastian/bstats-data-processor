@@ -79,8 +79,8 @@ pub async fn handle_legacy_data_submission(
         };
 
         let _ = handle_data_submission(
-            &request,
-            &redis_pool,
+            request,
+            redis_pool,
             software_url,
             &SubmitDataSchema {
                 server_uuid: data.server_uuid.clone(),

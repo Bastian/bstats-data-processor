@@ -26,7 +26,7 @@ impl PredefinedValueParser {
             let country_name = self.country_name.as_ref()?;
             return Some(json!(country_name));
         }
-        return Some(self.value.clone());
+        Some(self.value.clone())
     }
 }
 

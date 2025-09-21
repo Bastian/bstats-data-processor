@@ -10,16 +10,8 @@ pub struct BukkitServerSoftwareParser;
 impl Parser for BukkitServerSoftwareParser {
     fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
         let software_name = parse_bukkit_server_software(
-            schema
-                .extra
-                .get("bukkitVersion")
-                .and_then(|v| v.as_str())
-                .as_deref(),
-            schema
-                .extra
-                .get("bukkitName")
-                .and_then(|v| v.as_str())
-                .as_deref(),
+            schema.extra.get("bukkitVersion").and_then(|v| v.as_str()),
+            schema.extra.get("bukkitName").and_then(|v| v.as_str()),
         )?;
         Some(json!(SimplePie {
             value: software_name
@@ -82,11 +74,11 @@ fn parse_bukkit_server_software(
             // Then try to find the software name based on the bukkit name
             bukkit_name.and_then(|bukkit_name| {
                 SERVER_SOFTWARE_BRANDS
-                    .get(&bukkit_name.to_ascii_lowercase().as_str())
+                    .get(bukkit_name.to_ascii_lowercase().as_str())
                     .cloned()
             })
         })
-        .unwrap_or_else(|| {
+        .unwrap_or({
             // TODO Use proper logging framework that does not block stdout
             // println!(
             //     "Unknown server software: bukkitVersion='{}', bukkitName='{}'",

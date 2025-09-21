@@ -19,6 +19,6 @@ impl Parser for NameInRequestParser {
             return schema.service.extra.get(&self.name_in_request).cloned();
         }
 
-        return None;
+        None
     }
 }
