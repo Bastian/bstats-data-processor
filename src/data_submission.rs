@@ -16,6 +16,7 @@ use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
 use actix_web::{error, web, HttpRequest, Responder};
 use once_cell::sync::Lazy;
+use deadpool_redis::cluster::Connection;
 
 pub async fn handle_data_submission(
     request: &HttpRequest,
@@ -23,18 +24,26 @@ pub async fn handle_data_submission(
     software_url: &str,
     data: &SubmitDataSchema,
     is_global_service: bool,
+    connection: Option<&mut Connection>,
 ) -> actix_web::Result<impl Responder> {
     if has_blocked_words(&data) {
         // Block silently
         return Ok("");
     }
 
-    let mut con = match redis_pool.get().await {
-        Ok(con) => con,
-        Err(e) => return Err(error::ErrorInternalServerError(e)),
+    let mut owned_con;
+    let con = match connection {
+        Some(c) => c,
+        None => {
+            owned_con = match redis_pool.get().await {
+                Ok(con) => con,
+                Err(e) => return Err(error::ErrorInternalServerError(e)),
+            };
+            &mut owned_con
+        }
     };
 
-    let software = match software::find_by_url(&mut con, software_url).await {
+    let software = match software::find_by_url(con, software_url).await {
         Ok(None) => return Err(error::ErrorNotFound("Software not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -45,7 +54,7 @@ pub async fn handle_data_submission(
     let ip = ip_parser::get_ip(&request)?;
 
     let ratelimit = is_ratelimited(
-        &mut con,
+        con,
         software_url,
         software.max_requests_per_ip,
         &data.server_uuid,
@@ -66,7 +75,7 @@ pub async fn handle_data_submission(
     // this only happens once per server.
     if !is_global_service && software.global_plugin.is_some() {
         let global_plugin = software.global_plugin.unwrap();
-        let global_plugin = service::find_by_id(&mut con, global_plugin).await;
+        let global_plugin = service::find_by_id(con, global_plugin).await;
         let global_plugin = match global_plugin {
             Ok(o) => o,
             Err(e) => return Err(error::ErrorInternalServerError(e)),
@@ -88,6 +97,7 @@ pub async fn handle_data_submission(
                     },
                 },
                 true,
+                Some(con),
             ))
             .await;
             match result {
@@ -104,7 +114,7 @@ pub async fn handle_data_submission(
         }
     }
 
-    let service = match service::find_by_id(&mut con, data.service.id).await {
+    let service = match service::find_by_id(con, data.service.id).await {
         Ok(None) => return Err(error::ErrorNotFound("Service not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
         Ok(Some(s)) => s,
@@ -144,7 +154,7 @@ pub async fn handle_data_submission(
     let chart_data = default_charts.iter().chain(custom_charts.iter());
 
     let resolved_charts: std::collections::HashMap<u64, Option<charts::Chart>> =
-        charts::find_by_ids(&mut con, service.charts).await.unwrap();
+        charts::find_by_ids(con, service.charts).await.unwrap();
 
     let mut pipeline = redis::pipe();
 
@@ -169,13 +179,13 @@ pub async fn handle_data_submission(
             tms2000,
             country_iso.as_deref(),
             &mut pipeline,
-            &mut con,
+            con,
         )
         .await;
     }
 
     pipeline
-        .query_async(&mut con)
+        .query_async::<()>(con)
         .await
         .map_err(error::ErrorInternalServerError)?;
 

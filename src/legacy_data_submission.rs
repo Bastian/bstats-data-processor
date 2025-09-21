@@ -93,6 +93,7 @@ pub async fn handle_legacy_data_submission(
                 },
             },
             false,
+            Some(&mut con),
         )
         .await;
     }
