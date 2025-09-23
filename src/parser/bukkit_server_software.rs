@@ -51,6 +51,7 @@ static SERVER_SOFTWARE_BRANDS: phf::OrderedMap<&'static str, &'static str> = phf
     "plazma" => "Plazma", // https://github.com/PlazmaMC/PlazmaBukkit
     "slimeworldmanager" => "SlimeWorldManager", // https://www.spigotmc.org/resources/slimeworldmanager.69974/ EOL: Now AdvancedSlimePaper
     "divinemc" => "DivineMC", // https://github.com/BX-Team/DivineMC
+    "deepslatemc" => "DeepslateMC", // https://github.com/Pascalpex/DeepslateMC
 };
 
 fn parse_bukkit_server_software(
@@ -255,6 +256,12 @@ mod tests {
                 bukkit_version: String::from("1.21.4-476-c0ca1f9 (MC: 1.21.4)"),
                 bukkit_name: String::from("DivineMC"),
                 expected: String::from("DivineMC"),
+            },
+            TestCase {
+                name: String::from("DeepslateMC 1.21.8"),
+                bukkit_version: String::from("1.21.8-DEV-5793a55 (MC: 1.21.8)"),
+                bukkit_name: String::from("DeepslateMC"),
+                expected: String::from("DeepslateMC"),
             },
         ];
 
