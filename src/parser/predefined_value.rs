@@ -1,6 +1,9 @@
 use serde_json::{json, Value};
 
-use crate::submit_data_schema::SubmitDataSchema;
+use crate::{
+    charts::{simple_pie::SimplePie, single_line_chart::SingleLineChart},
+    submit_data_schema::SubmitDataSchema,
+};
 
 use super::Parser;
 
@@ -24,9 +27,25 @@ impl PredefinedValueParser {
             .unwrap_or(false)
         {
             let country_name = self.country_name.as_ref()?;
-            return Some(json!(country_name));
+            return Some(json!(SimplePie {
+                value: country_name.to_string()
+            }));
         }
-        Some(self.value.clone())
+
+        if let Some(num) = self.value.as_i64() {
+            let safe_num = i16::try_from(num).unwrap_or({
+                // Clamp to i16 range if conversion fails
+                if num > i16::MAX as i64 {
+                    i16::MAX
+                } else {
+                    i16::MIN
+                }
+            });
+            return Some(json!(SingleLineChart { value: safe_num }));
+        }
+
+        // For other types, keep the value as is
+        Some(json!({"value": self.value.clone()}))
     }
 }
 
@@ -35,25 +54,44 @@ mod tests {
 
     use super::*;
 
+    fn parser(value: Value, country_name: Option<String>) -> PredefinedValueParser {
+        PredefinedValueParser {
+            value,
+            country_name,
+        }
+    }
+
     #[test]
-    fn test_parse_os() {
-        let parser = PredefinedValueParser {
-            value: json!("%country.name%"),
-            country_name: Some(String::from("Germany")),
-        };
-
-        let result = parser.parse();
-        assert_eq!(result.unwrap().as_str(), Some("Germany"));
-
-        let parser = PredefinedValueParser {
-            value: json!({"key": "value"}),
-            country_name: None,
-        };
-
-        let result = parser.parse();
+    fn test_parse_predefined_value() {
         assert_eq!(
-            result.unwrap().as_object(),
-            Some(json!({"key": "value"}).as_object().unwrap())
+            parser(json!("%country.name%"), Some(String::from("Germany")))
+                .parse()
+                .unwrap()
+                .as_object(),
+            Some(json!({"value": "Germany"}).as_object().unwrap())
+        );
+
+        assert_eq!(
+            parser(json!(42), None).parse().unwrap().as_object(),
+            Some(json!({"value": 42}).as_object().unwrap())
+        );
+
+        assert_eq!(
+            parser(json!({"key": "value"}), None)
+                .parse()
+                .unwrap()
+                .as_object(),
+            Some(json!({"value": {"key": "value"}}).as_object().unwrap())
+        );
+
+        // Test clamping
+        assert_eq!(
+            parser(json!(123456789), None).parse().unwrap().as_object(),
+            Some(json!({"value": i16::MAX}).as_object().unwrap())
+        );
+        assert_eq!(
+            parser(json!(-123456789), None).parse().unwrap().as_object(),
+            Some(json!({"value": i16::MIN}).as_object().unwrap())
         );
     }
 }
