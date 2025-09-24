@@ -55,6 +55,21 @@ pub fn get_parser(
                 .get("position")?
                 .as_str()?
                 .to_string(),
+            data_type: template
+                .request_parser
+                .get("type")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            true_value: template
+                .request_parser
+                .get("trueValue")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            false_value: template
+                .request_parser
+                .get("falseValue")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
         }));
     }
 
