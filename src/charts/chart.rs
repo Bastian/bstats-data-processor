@@ -94,3 +94,18 @@ pub enum ChartType {
     #[serde(rename = "advanced_bar")]
     AdvancedBar,
 }
+
+/// Filter trait for chart data.
+///
+/// Allows defining filters that are applied to chart data before processing to
+/// reduce impact from malicious or erroneous data points.
+pub trait ChartFilter<T> {
+    /// Filters the given data based on the filter's criteria.
+    ///
+    /// Returns `Some(T)` if the data passes the filter, or `None` if it should
+    /// be blocked.
+    ///
+    /// The returned `T` may be modified to fit within filter constraints
+    /// (e.g., clamped to min/max values).
+    fn filter(&self, data: &T) -> Option<T>;
+}

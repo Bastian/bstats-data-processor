@@ -16,6 +16,8 @@ use crate::{
     submit_data_schema::SubmitDataChartSchema,
 };
 
+use crate::charts::chart::ChartFilter;
+
 pub async fn update_chart<C: AsyncCommands>(
     chart: &Chart,
     data: &SubmitDataChartSchema,
@@ -28,19 +30,18 @@ pub async fn update_chart<C: AsyncCommands>(
     match chart.r#type {
         ChartType::SingleLineChart => {
             let data: SingleLineChart = serde_json::from_value(data.data.clone())?;
-            let should_block = match chart.data.get("filter") {
+            let data = match chart.data.get("filter") {
                 Some(filter) => {
                     match serde_json::from_value::<SingleLineChartFilter>(filter.clone()) {
-                        Ok(filter) => filter.should_block(&data),
-                        Err(_) => false,
+                        Ok(filter) => filter.filter(&data),
+                        Err(_) => Some(data),
                     }
                 }
-                None => false,
+                None => Some(data),
             };
-            if should_block {
-                return Ok(());
+            if let Some(data) = data {
+                update_line_chart_data(chart.id, tms2000, "1", data.value, con).await;
             }
-            update_line_chart_data(chart.id, tms2000, "1", data.value, con).await;
         }
         ChartType::SimplePie => {
             let data: SimplePie = serde_json::from_value(data.data.clone())?;
