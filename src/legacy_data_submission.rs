@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use actix_web::{error, web, HttpRequest, Responder};
+use actix_web::{error, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use serde_json::Value;
@@ -52,7 +52,7 @@ pub async fn handle_legacy_data_submission(
     redis_pool: &web::Data<RedisClusterPool>,
     software_url: &str,
     data: LegacySubmitDataSchema,
-) -> actix_web::Result<impl Responder> {
+) -> actix_web::Result<HttpResponse> {
     let mut con = match redis_pool.get().await {
         Ok(con) => con,
         Err(e) => return Err(error::ErrorInternalServerError(e)),
@@ -98,5 +98,5 @@ pub async fn handle_legacy_data_submission(
         .await;
     }
 
-    Ok("")
+    Ok(HttpResponse::Ok().finish())
 }

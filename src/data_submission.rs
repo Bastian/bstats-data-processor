@@ -14,9 +14,8 @@ use crate::submit_data_schema::SubmitDataServiceSchema;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
-use actix_web::{error, web, HttpRequest, Responder};
+use actix_web::{error, web, HttpRequest, HttpResponse};
 use deadpool_redis::cluster::Connection;
-use once_cell::sync::Lazy;
 
 pub async fn handle_data_submission(
     request: &HttpRequest,
@@ -25,12 +24,7 @@ pub async fn handle_data_submission(
     data: &SubmitDataSchema,
     is_global_service: bool,
     connection: Option<&mut Connection>,
-) -> actix_web::Result<impl Responder> {
-    if has_blocked_words(data) {
-        // Block silently
-        return Ok("");
-    }
-
+) -> actix_web::Result<HttpResponse> {
     let mut owned_con;
     let con = match connection {
         Some(c) => c,
@@ -189,22 +183,5 @@ pub async fn handle_data_submission(
         .await
         .map_err(error::ErrorInternalServerError)?;
 
-    Ok("")
-}
-
-static WORD_BLOCKLIST: Lazy<Vec<String>> = Lazy::new(|| {
-    let word_blocklist = std::env::var("WORD_BLOCKLIST").unwrap_or(String::from("[]"));
-    serde_json::from_str(&word_blocklist).unwrap_or_default()
-});
-
-fn has_blocked_words(data: &SubmitDataSchema) -> bool {
-    let mut blocked = false;
-    for word in WORD_BLOCKLIST.iter() {
-        // TODO: This is a very inefficient way to check for blocked words
-        if serde_json::to_string(&data).unwrap().contains(word) {
-            blocked = true;
-            break;
-        }
-    }
-    blocked
+    Ok(HttpResponse::Ok().finish())
 }
