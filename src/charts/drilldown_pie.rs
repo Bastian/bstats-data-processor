@@ -5,5 +5,5 @@ use validator::Validate;
 
 #[derive(Debug, Validate, Deserialize, Serialize)]
 pub struct DrilldownPie {
-    pub values: HashMap<String, HashMap<String, u16>>,
+    pub values: HashMap<String, HashMap<String, u32>>,
 }

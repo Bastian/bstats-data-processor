@@ -33,12 +33,12 @@ impl PredefinedValueParser {
         }
 
         if let Some(num) = self.value.as_i64() {
-            let safe_num = i16::try_from(num).unwrap_or({
-                // Clamp to i16 range if conversion fails
-                if num > i16::MAX as i64 {
-                    i16::MAX
+            let safe_num = i32::try_from(num).unwrap_or({
+                // Clamp to i32 range if conversion fails
+                if num > i32::MAX as i64 {
+                    i32::MAX
                 } else {
-                    i16::MIN
+                    i32::MIN
                 }
             });
             return Some(json!(SingleLineChart { value: safe_num }));
@@ -86,12 +86,18 @@ mod tests {
 
         // Test clamping
         assert_eq!(
-            parser(json!(123456789), None).parse().unwrap().as_object(),
-            Some(json!({"value": i16::MAX}).as_object().unwrap())
+            parser(json!(9999999999i64), None)
+                .parse()
+                .unwrap()
+                .as_object(),
+            Some(json!({"value": i32::MAX}).as_object().unwrap())
         );
         assert_eq!(
-            parser(json!(-123456789), None).parse().unwrap().as_object(),
-            Some(json!({"value": i16::MIN}).as_object().unwrap())
+            parser(json!(-9999999999i64), None)
+                .parse()
+                .unwrap()
+                .as_object(),
+            Some(json!({"value": i32::MIN}).as_object().unwrap())
         );
     }
 }

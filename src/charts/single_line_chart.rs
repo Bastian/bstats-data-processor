@@ -5,23 +5,23 @@ use crate::charts::chart::ChartFilter;
 
 #[derive(Debug, Validate, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub struct SingleLineChart {
-    pub value: i16,
+    pub value: i32,
 }
 
 #[derive(Debug, Validate, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub struct SingleLineChartFilter {
     pub enabled: bool,
     #[serde(rename = "maxValue")]
-    pub max_value: Option<i16>,
+    pub max_value: Option<i32>,
     #[serde(rename = "minValue")]
-    pub min_value: Option<i16>,
+    pub min_value: Option<i32>,
 }
 
 impl SingleLineChartFilter {
     // Clamp a value according to the filter's (possibly partial) bounds.
     // If both bounds are present and inverted (min > max), we normalize by
     // swapping.
-    fn clamp_value(&self, v: i16) -> i16 {
+    fn clamp_value(&self, v: i32) -> i32 {
         match (self.min_value, self.max_value) {
             (Some(lo), Some(hi)) => v.clamp(lo.min(hi), lo.max(hi)),
             (Some(lo), None) => v.max(lo),
@@ -166,14 +166,14 @@ mod tests {
     fn works_with_extreme_values() {
         let filter = SingleLineChartFilter {
             enabled: true,
-            max_value: Some(i16::MAX),
-            min_value: Some(i16::MIN),
+            max_value: Some(i32::MAX),
+            min_value: Some(i32::MIN),
         };
 
-        let data = SingleLineChart { value: i16::MAX };
+        let data = SingleLineChart { value: i32::MAX };
         assert_eq!(filter.filter(&data), Some(data));
 
-        let data = SingleLineChart { value: i16::MIN };
+        let data = SingleLineChart { value: i32::MIN };
         assert_eq!(filter.filter(&data), Some(data));
     }
 

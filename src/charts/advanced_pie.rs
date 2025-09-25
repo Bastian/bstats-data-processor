@@ -5,5 +5,5 @@ use validator::Validate;
 
 #[derive(Debug, Validate, Deserialize, Serialize)]
 pub struct AdvancedPie {
-    pub values: HashMap<String, u16>,
+    pub values: HashMap<String, u32>,
 }

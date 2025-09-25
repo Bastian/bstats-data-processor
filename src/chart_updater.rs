@@ -117,7 +117,7 @@ pub fn update_pie_data(
     chart_id: u64,
     tms2000: i64,
     value_name: &str,
-    value: u16,
+    value: u32,
     pipeline: &mut redis::Pipeline,
 ) {
     let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
@@ -130,7 +130,7 @@ pub fn update_map_data(
     chart_id: u64,
     tms2000: i64,
     value_name: &str,
-    value: u16,
+    value: u32,
     pipeline: &mut redis::Pipeline,
 ) {
     // The charts are saved the same way
@@ -141,7 +141,7 @@ pub async fn update_line_chart_data<C: AsyncCommands>(
     chart_id: u64,
     tms2000: i64,
     line: &str,
-    value: i16,
+    value: i32,
     con: &mut C,
 ) {
     let key = format!("data:{{{}}}.{}", chart_id, line);
@@ -159,7 +159,7 @@ pub fn update_drilldown_pie_data(
     chart_id: u64,
     tms2000: i64,
     value_name: &str,
-    values: HashMap<String, u16>,
+    values: HashMap<String, u32>,
     pipeline: &mut redis::Pipeline,
 ) {
     let mut total_value = 0;
