@@ -144,7 +144,8 @@ pub async fn update_line_chart_data<C: AsyncCommands>(
     value: i32,
     con: &mut C,
 ) {
-    let key = format!("data:{{{}}}.{}", chart_id, line);
+    // TODO Use pipeline (must ensure that it is on the same shard first)
+    let key = format!("data:{}.{}", chart_id, line);
     match con.hincr(key, tms2000_to_timestamp(tms2000), value).await {
         Ok(()) => (),
         Err(e) => {
