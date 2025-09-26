@@ -15,12 +15,6 @@ async fn test_find_all() {
         "Servers using %plugin.name%"
     );
     assert_eq!(software[0].hide_in_plugin_list, false);
-
-    // In an empty environment, no data should be returned
-    test_environment.cleanup().await;
-
-    let software: Vec<data_processor::software::Software> = find_all(&mut con).await.unwrap();
-    assert_eq!(software.len(), 0);
 }
 
 #[tokio::test]

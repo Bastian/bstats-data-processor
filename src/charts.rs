@@ -7,7 +7,9 @@ pub mod single_line_chart;
 
 use std::collections::HashMap;
 
+use crate::cache::Cache;
 use chart::ChartType;
+use once_cell::sync::Lazy;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -23,6 +25,8 @@ pub struct Chart {
     pub data: Value,
     pub service_id: u32,
 }
+
+static CACHE: Lazy<Cache<u64, Chart>> = Lazy::new(|| Cache::with_ttl_minutes(60));
 
 /// Find all charts with the given IDs.
 pub async fn find_by_ids<C: AsyncCommands>(
@@ -41,13 +45,17 @@ pub async fn find_by_id<C: AsyncCommands>(
     con: &mut C,
     id: u64,
 ) -> Result<Option<Chart>, redis::RedisError> {
+    if let Some(cached) = CACHE.get(&id).await {
+        return Ok(Some(cached));
+    }
+
     let map: HashMap<String, String> = con.hgetall(format!("charts:{}", id)).await?;
 
     if map.is_empty() {
         return Ok(None);
     }
 
-    Ok(Some(Chart {
+    let chart = Chart {
         id,
         id_custom: map
             .get("id")
@@ -77,5 +85,8 @@ pub async fn find_by_id<C: AsyncCommands>(
             .expect("Chart without 'pluginId'")
             .parse()
             .expect("Chart with non-numeric 'pluginId"),
-    }))
+    };
+
+    CACHE.insert(id, chart.clone()).await;
+    Ok(Some(chart))
 }

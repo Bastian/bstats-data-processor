@@ -1,8 +1,10 @@
 use std::collections::{HashMap, HashSet};
 extern crate redis;
+use once_cell::sync::Lazy;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 
+use crate::cache::Cache;
 use crate::charts::chart::DefaultChartTemplate;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,8 +20,12 @@ pub struct Software {
     pub hide_in_plugin_list: bool,
 }
 
+static SOFTWARE_CACHE: Lazy<Cache<u16, Software>> = Lazy::new(|| Cache::with_ttl_minutes(300));
+static SOFTWARE_IDS_CACHE: Lazy<Cache<&'static str, HashSet<u16>>> =
+    Lazy::new(|| Cache::with_ttl_minutes(300));
+static URL_TO_ID_CACHE: Lazy<Cache<String, u16>> = Lazy::new(|| Cache::with_ttl_minutes(300));
+
 pub async fn find_all<C: AsyncCommands>(con: &mut C) -> Result<Vec<Software>, redis::RedisError> {
-    // TODO: Cache result since it hardly ever changes
     let software_ids = find_all_software_ids(con).await?;
     let mut software = Vec::new();
     for id in software_ids {
@@ -49,13 +55,16 @@ pub async fn find_by_id<C: AsyncCommands>(
     con: &mut C,
     id: u16,
 ) -> Result<Option<Software>, redis::RedisError> {
-    // TODO: Cache result since it hardly ever changes
+    if let Some(cached) = SOFTWARE_CACHE.get(&id).await {
+        return Ok(Some(cached));
+    }
+
     let software: HashMap<String, String> = con.hgetall(format!("software:{}", id)).await?;
     if software.is_empty() {
         return Ok(None);
     }
 
-    Ok(Some(Software {
+    let software_obj = Software {
         id,
         name: software.get("name").unwrap().to_string(),
         url: software.get("url").unwrap().to_string(),
@@ -68,18 +77,38 @@ pub async fn find_by_id<C: AsyncCommands>(
             .unwrap_or(&String::from("0"))
             != "0",
         default_charts: serde_json::from_str(software.get("defaultCharts").unwrap()).unwrap(),
-    }))
+    };
+
+    SOFTWARE_CACHE.insert(id, software_obj.clone()).await;
+    Ok(Some(software_obj))
 }
 
 async fn find_all_software_ids<C: AsyncCommands>(
     con: &mut C,
 ) -> Result<HashSet<u16>, redis::RedisError> {
-    con.smembers("software.ids").await
+    if let Some(cached) = SOFTWARE_IDS_CACHE.get(&"all").await {
+        return Ok(cached);
+    }
+
+    let ids: HashSet<u16> = con.smembers("software.ids").await?;
+    SOFTWARE_IDS_CACHE.insert("all", ids.clone()).await;
+    Ok(ids)
 }
 
 async fn _find_software_id_by_url<C: AsyncCommands>(
     con: &mut C,
     url: &str,
 ) -> Result<Option<u16>, redis::RedisError> {
-    con.get(format!("software.index.id.url:{}", url)).await
+    if let Some(cached_id) = URL_TO_ID_CACHE.get(&url.to_string()).await {
+        return Ok(Some(cached_id));
+    }
+
+    let id: Option<u16> = con.get(format!("software.index.id.url:{}", url)).await?;
+
+    if let Some(id) = id {
+        URL_TO_ID_CACHE.insert(url.to_string(), id).await;
+        Ok(Some(id))
+    } else {
+        Ok(None)
+    }
 }

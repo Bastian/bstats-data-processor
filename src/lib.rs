@@ -1,3 +1,4 @@
+pub mod cache;
 pub mod chart_updater;
 pub mod charts;
 pub mod data_submission;
