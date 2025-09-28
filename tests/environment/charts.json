@@ -1,0 +1,777 @@
+[
+  {
+    "id": 1,
+    "idCustom": "javaVersion",
+    "type": "drilldown_pie",
+    "position": 9,
+    "title": "Java Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 2,
+    "idCustom": "os",
+    "type": "drilldown_pie",
+    "position": 7,
+    "title": "Operating System",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 3,
+    "idCustom": "servers",
+    "type": "single_linechart",
+    "position": 0,
+    "title": "Servers",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": false,
+        "maxValue": 2147483647,
+        "minValue": -2147483647
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 4,
+    "idCustom": "players",
+    "type": "single_linechart",
+    "position": 1,
+    "title": "Players",
+    "isDefault": true,
+    "data": {
+      "lineName": "Players",
+      "filter": {
+        "enabled": false,
+        "maxValue": 2147483647,
+        "minValue": -2147483647
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 5,
+    "idCustom": "onlineMode",
+    "type": "simple_pie",
+    "position": 2,
+    "title": "Online mode",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 6,
+    "idCustom": "minecraftVersion",
+    "type": "simple_pie",
+    "position": 3,
+    "title": "Minecraft Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 7,
+    "idCustom": "coreCount",
+    "type": "simple_pie",
+    "position": 5,
+    "title": "Core count",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 8,
+    "idCustom": "osArch",
+    "type": "simple_pie",
+    "position": 6,
+    "title": "System arch",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 9,
+    "idCustom": "location",
+    "type": "simple_pie",
+    "position": 8,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 10,
+    "idCustom": "locationMap",
+    "type": "simple_map",
+    "position": 10,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 11,
+    "idCustom": "servers",
+    "type": "single_linechart",
+    "position": 0,
+    "title": "Servers",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": false,
+        "maxValue": 1,
+        "minValue": 1
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 12,
+    "idCustom": "osArch",
+    "type": "simple_pie",
+    "position": 5,
+    "title": "System arch",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 13,
+    "idCustom": "coreCount",
+    "type": "simple_pie",
+    "position": 4,
+    "title": "Core count",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": true,
+        "useRegex": true,
+        "blacklist": false,
+        "filter": [
+          "([0-9]){1,2}"
+        ]
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 14,
+    "idCustom": "onlineMode",
+    "type": "simple_pie",
+    "position": 2,
+    "title": "Online mode",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 15,
+    "idCustom": "players",
+    "type": "single_linechart",
+    "position": 1,
+    "title": "Players",
+    "isDefault": true,
+    "data": {
+      "lineName": "Players",
+      "filter": {
+        "enabled": true,
+        "maxValue": 200,
+        "minValue": 0
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 16,
+    "idCustom": "location",
+    "type": "simple_pie",
+    "position": 7,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 17,
+    "idCustom": "os",
+    "type": "drilldown_pie",
+    "position": 6,
+    "title": "Operating System",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 18,
+    "idCustom": "minecraftVersion",
+    "type": "simple_pie",
+    "position": 3,
+    "title": "Minecraft Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 19,
+    "idCustom": "locationMap",
+    "type": "simple_map",
+    "position": 9,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 20,
+    "idCustom": "javaVersion",
+    "type": "drilldown_pie",
+    "position": 8,
+    "title": "Java Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 3
+  },
+  {
+    "id": 21,
+    "idCustom": "location",
+    "type": "simple_pie",
+    "position": 8,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 22,
+    "idCustom": "servers",
+    "type": "single_linechart",
+    "position": 0,
+    "title": "Proxy Servers",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": false,
+        "maxValue": 1,
+        "minValue": 1
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 23,
+    "idCustom": "players",
+    "type": "single_linechart",
+    "position": 2,
+    "title": "Players",
+    "isDefault": true,
+    "data": {
+      "lineName": "Players",
+      "filter": {
+        "enabled": true,
+        "maxValue": 200,
+        "minValue": 0
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 24,
+    "idCustom": "managed_servers",
+    "type": "single_linechart",
+    "position": 1,
+    "title": "Managed Servers",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": true,
+        "maxValue": 25,
+        "minValue": 0
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 25,
+    "idCustom": "onlineMode",
+    "type": "simple_pie",
+    "position": 3,
+    "title": "Online mode",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 26,
+    "idCustom": "bungeecordVersion",
+    "type": "simple_pie",
+    "position": 4,
+    "title": "Bungeecord Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 27,
+    "idCustom": "coreCount",
+    "type": "simple_pie",
+    "position": 5,
+    "title": "Core count",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": true,
+        "useRegex": true,
+        "blacklist": false,
+        "filter": [
+          "([0-9]){1,2}"
+        ]
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 28,
+    "idCustom": "osArch",
+    "type": "simple_pie",
+    "position": 6,
+    "title": "System arch",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 29,
+    "idCustom": "os",
+    "type": "drilldown_pie",
+    "position": 7,
+    "title": "Operating System",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 30,
+    "idCustom": "javaVersion",
+    "type": "drilldown_pie",
+    "position": 9,
+    "title": "Java Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 31,
+    "idCustom": "locationMap",
+    "type": "simple_map",
+    "position": 10,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 2
+  },
+  {
+    "id": 38279,
+    "idCustom": "serverSoftware",
+    "type": "simple_pie",
+    "position": 4,
+    "title": "Server Software",
+    "isDefault": false,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 1
+  },
+  {
+    "id": 335500,
+    "idCustom": "servers",
+    "type": "single_linechart",
+    "position": 0,
+    "title": "Servers using TestPluginForIntegrationTests",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": false,
+        "maxValue": 1,
+        "minValue": 1
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335501,
+    "idCustom": "players",
+    "type": "single_linechart",
+    "position": 1,
+    "title": "Players on servers using TestPluginForIntegrationTests",
+    "isDefault": true,
+    "data": {
+      "lineName": "Players",
+      "filter": {
+        "enabled": true,
+        "maxValue": 200,
+        "minValue": 0
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335502,
+    "idCustom": "onlineMode",
+    "type": "simple_pie",
+    "position": 2,
+    "title": "Online mode",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335503,
+    "idCustom": "minecraftVersion",
+    "type": "simple_pie",
+    "position": 3,
+    "title": "Minecraft Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335504,
+    "idCustom": "serverSoftware",
+    "type": "simple_pie",
+    "position": 4,
+    "title": "Server Software",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335505,
+    "idCustom": "pluginVersion",
+    "type": "simple_pie",
+    "position": 5,
+    "title": "Plugin Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335506,
+    "idCustom": "coreCount",
+    "type": "simple_pie",
+    "position": 6,
+    "title": "Core count",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": true,
+        "useRegex": true,
+        "blacklist": false,
+        "filter": [
+          "([0-9]){1,2}"
+        ]
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335507,
+    "idCustom": "osArch",
+    "type": "simple_pie",
+    "position": 7,
+    "title": "System arch",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335508,
+    "idCustom": "os",
+    "type": "drilldown_pie",
+    "position": 8,
+    "title": "Operating System",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335509,
+    "idCustom": "location",
+    "type": "simple_pie",
+    "position": 9,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335510,
+    "idCustom": "javaVersion",
+    "type": "drilldown_pie",
+    "position": 10,
+    "title": "Java Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335511,
+    "idCustom": "locationMap",
+    "type": "simple_map",
+    "position": 11,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  },
+  {
+    "id": 335512,
+    "idCustom": "custom_simple_pie_chart",
+    "type": "simple_pie",
+    "position": 12,
+    "title": "Custom Simple Pie Chart",
+    "isDefault": false,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27400
+  }
+]

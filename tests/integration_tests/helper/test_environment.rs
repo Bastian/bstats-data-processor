@@ -9,7 +9,10 @@ use data_processor::{
 };
 use deadpool_redis::cluster::Connection;
 use redis::AsyncCommands;
-use serde_json::json;
+use serde::Deserialize;
+use serde_json::{self, Value};
+use std::path::Path;
+use tokio::fs;
 
 use super::redis_testcontainer::RedisTestcontainer;
 
@@ -30,20 +33,43 @@ impl TestEnvironment {
         }
     }
 
+    /// Load default test environment
     pub async fn with_data() -> Self {
-        let mut environment: TestEnvironment = Self::empty().await;
-        environment.add_software(get_bukkit_software()).await;
-        environment.add_software(get_bungeecord_software()).await;
-        let (global_bukkit_service, global_bukkit_charts) = get_bukkit_global_service();
-        environment.add_service(global_bukkit_service).await;
-        for chart in global_bukkit_charts {
-            environment.add_chart(chart).await;
+        TestEnvironment::from_files("tests/environment")
+            .await
+            .expect("failed to load test data from files")
+    }
+
+    /// Load environment from software.json, services.json, charts.json in `dir`
+    pub async fn from_files<P: AsRef<Path>>(dir: P) -> Result<Self, Box<dyn std::error::Error>> {
+        let dir = dir.as_ref();
+        let mut env = Self::empty().await;
+
+        // software.json
+        let software_raw = fs::read_to_string(dir.join("software.json")).await?;
+        let api_softwares: Vec<ApiSoftware> = serde_json::from_str(&software_raw)?;
+        let softwares: Vec<Software> = api_softwares.into_iter().map(map_software).collect();
+        for s in softwares {
+            env.add_software(s).await;
         }
-        environment
-            .add_service(get_bungeecord_global_service())
-            .await;
-        environment.add_service(get_generic_bukkit_service()).await;
-        environment
+
+        // services.json
+        let services_raw = fs::read_to_string(dir.join("services.json")).await?;
+        let api_services: Vec<ApiService> = serde_json::from_str(&services_raw)?;
+        let services: Vec<Service> = api_services.into_iter().map(map_service).collect();
+        for svc in services {
+            env.add_service(svc).await;
+        }
+
+        // charts.json
+        let charts_raw = fs::read_to_string(dir.join("charts.json")).await?;
+        let api_charts: Vec<ApiChart> = serde_json::from_str(&charts_raw)?;
+        let charts: Vec<Chart> = api_charts.into_iter().map(map_chart).collect();
+        for ch in charts {
+            env.add_chart(ch).await;
+        }
+
+        Ok(env)
     }
 
     pub async fn cleanup(&self) {
@@ -213,301 +239,123 @@ impl TestEnvironment {
     }
 }
 
-pub fn get_bukkit_software() -> Software {
+#[derive(Deserialize)]
+struct ApiSoftware {
+    id: u16,
+    name: String,
+    url: String,
+    #[serde(rename = "globalPlugin")]
+    global_plugin: Option<u32>,
+    #[serde(rename = "metricsClass")]
+    metrics_class: Option<String>,
+    #[serde(rename = "examplePlugin")]
+    example_plugin: Option<String>,
+    #[serde(rename = "maxRequestsPerIp")]
+    max_requests_per_ip: Option<u16>,
+    #[serde(rename = "defaultCharts")]
+    default_charts: Vec<ApiDefaultChartTemplate>,
+    #[serde(rename = "hideInPluginList")]
+    hide_in_plugin_list: bool,
+}
+
+#[derive(Deserialize)]
+struct ApiDefaultChartTemplate {
+    #[serde(rename = "idCustom")]
+    id_custom: String,
+    #[serde(rename = "type")]
+    chart_type: ChartType,
+    title: String,
+    data: Value,
+    #[serde(rename = "requestParser")]
+    request_parser: Value,
+}
+
+#[derive(Deserialize)]
+struct ApiService {
+    id: u32,
+    name: String,
+    owner: ApiOwner,
+    software: ApiSoftwareRef,
+    #[serde(rename = "isGlobal")]
+    is_global: bool,
+    #[serde(rename = "chartIds")]
+    chart_ids: Vec<u64>,
+}
+
+#[derive(Deserialize)]
+struct ApiOwner {
+    name: String,
+}
+
+#[derive(Deserialize)]
+struct ApiSoftwareRef {
+    id: u16,
+}
+
+#[derive(Deserialize)]
+struct ApiChart {
+    id: u64,
+    #[serde(rename = "idCustom")]
+    id_custom: String,
+    #[serde(rename = "type")]
+    chart_type: ChartType,
+    position: u16,
+    title: String,
+    #[serde(rename = "isDefault")]
+    is_default: bool,
+    data: Value,
+    #[serde(rename = "serviceId")]
+    service_id: u32,
+}
+
+fn map_default_chart_template(api: ApiDefaultChartTemplate) -> DefaultChartTemplate {
+    DefaultChartTemplate {
+        id: api.id_custom,
+        chart_type: api.chart_type,
+        title: api.title,
+        data: api.data,
+        request_parser: api.request_parser,
+    }
+}
+
+fn map_software(api: ApiSoftware) -> Software {
     Software {
-        id: 1,
-        name: String::from("Bukkit / Spigot"),
-        url: String::from("bukkit"),
-        global_plugin: Some(1),
-        metrics_class: Some(String::from("https://raw.githubusercontent.com/Bastian/bstats-metrics/single-file/bukkit/Metrics.java")),
-        example_plugin: Some(String::from("https://github.com/Bastian/bstats-metrics/blob/1.x.x/bstats-bukkit/src/examples/java/ExamplePlugin.java")),
-        max_requests_per_ip: 10,
-        hide_in_plugin_list: false,
-        default_charts: vec![
-            DefaultChartTemplate {
-                id: String::from("servers"),
-                chart_type: ChartType::SingleLineChart,
-                title: String::from("Servers using %plugin.name%"),
-                data: json!({
-                    "lineName": "Servers",
-                    "filter": {
-                        "enabled": false,
-                        "maxValue": 1,
-                        "minValue": 1
-                    }
-                }),
-                request_parser: json!({
-                    "predefinedValue": 1
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("players"),
-                chart_type: ChartType::SingleLineChart,
-                title: String::from("Players on servers using %plugin.name%"),
-                data: json!({
-                    "lineName": "Players",
-                    "filter": {
-                        "enabled": true,
-                        "maxValue": 200,
-                        "minValue": 0
-                    }
-                }),
-                request_parser: json!({
-                    "nameInRequest": "playerAmount",
-                    "type": "number",
-                    "position": "global"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("onlineMode"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("Online mode"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "nameInRequest": "onlineMode",
-                    "position": "global",
-                    "type": "boolean",
-                    "trueValue": "online",
-                    "falseValue": "offline"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("minecraftVersion"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("Minecraft Version"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "useHardcodedParser": "bukkitMinecraftVersion",
-                    "position": "global"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("serverSoftware"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("Server Software"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "useHardcodedParser": "bukkitServerSoftware",
-                    "position": "global"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("pluginVersion"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("Plugin Version"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "nameInRequest": "pluginVersion",
-                    "position": "plugin"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("coreCount"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("Core count"),
-                data: json!({
-                    "filter": {
-                        "enabled": true,
-                        "useRegex": true,
-                        "blacklist": false,
-                        "filter": [
-                            "([0-9]){1,2}"
-                        ]
-                    }
-                }),
-                request_parser: json!({
-                    "nameInRequest": "coreCount",
-                    "type": "number",
-                    "position": "global"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("osArch"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("System arch"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "nameInRequest": "osArch",
-                    "position": "global"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("os"),
-                chart_type: ChartType::DrilldownPie,
-                title: String::from("Operating System"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "position": "global",
-                    "useHardcodedParser": "os"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("location"),
-                chart_type: ChartType::SimplePie,
-                title: String::from("Server Location"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "predefinedValue": "%country.name%"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("javaVersion"),
-                chart_type: ChartType::DrilldownPie,
-                title: String::from("Java Version"),
-                data: json!({
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "useHardcodedParser": "javaVersion",
-                    "position": "global"
-                }),
-            },
-            DefaultChartTemplate {
-                id: String::from("locationMap"),
-                chart_type: ChartType::SimpleMap,
-                title: String::from("Server Location"),
-                data: json!({
-                    "valueName": "Servers",
-                    "filter": {
-                        "enabled": false,
-                        "useRegex": false,
-                        "blacklist": false,
-                        "filter": []
-                    }
-                }),
-                request_parser: json!({
-                    "predefinedValue": "AUTO"
-                }),
-            },
-        ]
+        id: api.id,
+        name: api.name,
+        url: api.url,
+        global_plugin: api.global_plugin,
+        metrics_class: api.metrics_class,
+        example_plugin: api.example_plugin,
+        max_requests_per_ip: api.max_requests_per_ip.unwrap_or(0),
+        hide_in_plugin_list: api.hide_in_plugin_list,
+        default_charts: api
+            .default_charts
+            .into_iter()
+            .map(map_default_chart_template)
+            .collect(),
     }
 }
 
-pub fn get_bungeecord_software() -> Software {
-    Software {
-        id: 2,
-        name: String::from("Bungeecord"),
-        url: String::from("bungeecord"),
-        global_plugin: Some(2),
-        metrics_class: Some(String::from("https://raw.githubusercontent.com/Bastian/bstats-metrics/single-file/bungeecord/Metrics.java")),
-        example_plugin: Some(String::from("https://github.com/Bastian/bstats-metrics/blob/1.x.x/bstats-bungeecord/src/examples/java/ExamplePlugin.java")),
-        max_requests_per_ip: 10,
-        hide_in_plugin_list: false,
-        default_charts: vec![]
-    }
-}
-
-pub fn get_bukkit_global_service() -> (Service, Vec<Chart>) {
-    let service = Service {
-        id: 1,
-        name: String::from("_bukkit_"),
-        owner: String::from("Admin"),
-        software_id: 1,
-        global: true,
-        charts: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 38279],
-    };
-
-    let charts = vec![
-        get_line_chart(service.id, 1, String::from("servers")),
-        get_line_chart(service.id, 2, String::from("players")),
-        // TODO Draw the rest of the owl
-    ];
-
-    (service, charts)
-}
-
-pub fn get_bungeecord_global_service() -> Service {
+fn map_service(api: ApiService) -> Service {
     Service {
-        id: 2,
-        name: String::from("_bungeecord_"),
-        owner: String::from("Admin"),
-        software_id: 2,
-        global: true,
-        charts: vec![21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+        id: api.id,
+        name: api.name,
+        owner: api.owner.name,
+        software_id: api.software.id,
+        global: api.is_global,
+        charts: api.chart_ids,
     }
 }
 
-pub fn get_generic_bukkit_service() -> Service {
-    Service {
-        id: 3,
-        name: String::from("My fancy Bukkit plugin"),
-        owner: String::from("JaneDoe"),
-        software_id: 1,
-        global: false,
-        charts: vec![32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
-    }
-}
-
-pub fn get_line_chart(service_id: u32, id: u64, id_custom: String) -> Chart {
+fn map_chart(api: ApiChart) -> Chart {
     Chart {
-        id,
-        id_custom,
-        r#type: ChartType::SingleLineChart,
-        position: 0,
-        title: String::from("My fancy line chart"),
-        default: false,
-        data: json!({
-            "lineName": "My fancy line",
-            "filter": {
-                "enabled": true,
-                "maxValue": 1000,
-                "minValue": 0
-            }
-        }),
-        service_id,
+        id: api.id,
+        id_custom: api.id_custom,
+        r#type: api.chart_type,
+        position: api.position,
+        title: api.title,
+        default: api.is_default,
+        data: api.data,
+        service_id: api.service_id,
     }
 }

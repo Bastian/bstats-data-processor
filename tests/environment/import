@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# Fetch software, global services, and referenced charts from the bStats API
+# and write consolidated JSON files: software.json, services.json, charts.json.
+#
+# The data is used to setup a test environment for the integration tests.
+#
+set -euo pipefail
+
+# Constants (adjust as needed)
+API_BASE="https://bstats.org/api/v2"
+OUT_DIR="."
+SOFTWARE_IDS=(1 2 3) # Software to import
+EXTRA_SERVICE_IDS=(27400) # Test Bukkit Plugin with some custom charts
+
+mkdir -p "$OUT_DIR"
+
+# Fetch and build software.json (in-memory)
+echo "Fetching software: ${SOFTWARE_IDS[*]} ..."
+software_json="$(
+  { for sid in "${SOFTWARE_IDS[@]}"; do
+      curl -sS "$API_BASE/software/$sid"
+      echo
+    done; } | jq -s '.'
+)"
+printf '%s\n' "$software_json" > "$OUT_DIR/software.json"
+echo "Wrote $OUT_DIR/software.json"
+
+# Derive service ids from software.globalPlugin + EXTRA_SERVICE_IDS
+mapfile -t service_ids_from_software < <(jq -r '[.[].globalPlugin] | map(select(. != null)) | unique | .[]' <<< "$software_json")
+mapfile -t service_ids < <(printf "%s\n" "${service_ids_from_software[@]}" "${EXTRA_SERVICE_IDS[@]}" | awk 'NF' | sort -u)
+
+if [[ ${#service_ids[@]} -eq 0 ]]; then
+  echo "No service ids found. Writing empty services.json and charts.json"
+  echo '[]' > "$OUT_DIR/services.json"
+  echo '[]' > "$OUT_DIR/charts.json"
+  exit 0
+fi
+
+# Fetch and build services.json
+echo "Fetching services: ${service_ids[*]} ..."
+services_json="$(
+  { for id in "${service_ids[@]}"; do
+      curl -sS "$API_BASE/services/$id"
+      echo
+    done; } | jq -s '.'
+)"
+printf '%s\n' "$services_json" > "$OUT_DIR/services.json"
+echo "Wrote $OUT_DIR/services.json"
+
+# Derive chart ids from services[].chartIds
+mapfile -t chart_ids < <(jq -r '([.[].chartIds] | map(select(. != null)) | add // []) | unique | .[]?' <<< "$services_json")
+
+if [[ ${#chart_ids[@]} -eq 0 ]]; then
+  echo "No chart ids found. Writing empty charts.json"
+  echo '[]' > "$OUT_DIR/charts.json"
+  exit 0
+fi
+
+# Fetch and build charts.json
+echo "Fetching charts: ${chart_ids[*]} ..."
+charts_json="$(
+  { for cid in "${chart_ids[@]}"; do
+      curl -sS "$API_BASE/charts/$cid"
+      echo
+    done; } | jq -s '.'
+)"
+printf '%s\n' "$charts_json" > "$OUT_DIR/charts.json"
+echo "Wrote $OUT_DIR/charts.json"
+
+echo "Done. Files in: $OUT_DIR"

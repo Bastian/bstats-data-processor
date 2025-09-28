@@ -35,14 +35,14 @@ async fn test_submit_data() {
                 "coreCount": 24,
                 "service": {
                     "pluginVersion": "1.0.0-SNAPSHOT",
-                    "id": 3,
+                    "id": 27400,
                     "customCharts": [
-                    {
-                        "chartId": "chart_id",
-                        "data": {
-                        "value": "My value"
+                        {
+                            "chartId": "custom_simple_pie_chart",
+                            "data": {
+                                "value": "Simple Pie Value"
+                            }
                         }
-                    }
                     ]
                 },
                 "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",

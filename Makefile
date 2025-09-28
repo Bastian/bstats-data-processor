@@ -24,3 +24,6 @@ lint:
 
 fmt:
 	cargo fmt --check
+
+update-test-environment:
+	cd tests/environment && ./import
