@@ -43,6 +43,17 @@ pub async fn handle_data_submission(
         Ok(Some(s)) => s,
     };
 
+    // Use a fixed time in tests for consistent snapshots
+    // TODO: We might want to use a more sophisticated way to control time in
+    //  tests, so that we can also test time-advancing scenarios.
+    #[cfg(feature = "test-fixtures")]
+    let tms2000 = date_to_tms2000(
+        chrono::DateTime::parse_from_rfc3339("2069-07-21T00:37:33Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc),
+    );
+
+    #[cfg(not(feature = "test-fixtures"))]
     let tms2000 = date_to_tms2000(chrono::Utc::now());
 
     let ip = ip_parser::get_ip(request)?;

@@ -11,7 +11,7 @@ test-unit:
 	cargo test --lib
 
 test-integration:
-	cargo test --test integration_tests -- --test-threads=1
+	cargo test --test integration_tests --features test-fixtures -- --test-threads=1
 
 run:
 	cargo run
@@ -27,3 +27,13 @@ fmt:
 
 update-test-environment:
 	cd tests/environment && ./import
+
+# Accept all new snapshot files created by the tests
+accept-snapshots:
+	# Find all files with the .snap.new extension and rename them to .snap
+	# Also remove the `assertion_line: <number>` metadata line added by insta
+	# See https://github.com/mitsuhiko/insta/pull/218
+	find . -type f -name '*.snap.new' | while read -r file; do \
+		mv "$$file" "$${file%.new}"; \
+		sed -i '/^assertion_line: [0-9]\+$$/d' "$${file%.new}"; \
+	done

@@ -1,2 +1,5 @@
 /target
 GeoLite2-Country.mmdb
+
+# Snapshot files from insta
+**.snap.new

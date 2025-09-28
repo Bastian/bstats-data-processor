@@ -1,0 +1,91 @@
+---
+source: tests/integration_tests/test_submit_data.rs
+description: Redis state changes after data submission
+expression: diff
+---
+added:
+  - value_type: HASH
+    key: "data:3.1"
+    value: "{'3141592200000': '1'}"
+  - value_type: HASH
+    key: "data:335500.1"
+    value: "{'3141592200000': '1'}"
+  - value_type: HASH
+    key: "data:335501.1"
+    value: "{'3141592200000': '25'}"
+  - value_type: HASH
+    key: "data:4.1"
+    value: "{'3141592200000': '25'}"
+  - value_type: STRING
+    key: "ratelimit:1#1.1.1.1.bukkit.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:1#7386d410-f71e-447c-b356-ee809c7db098.bukkit.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:27400#1.1.1.1.bukkit.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:27400#7386d410-f71e-447c-b356-ee809c7db098.bukkit.1217905"
+    value: "'1'"
+  - value_type: ZSET
+    key: "data:{1}.1.1217905"
+    value: "('Java 21', 1)"
+  - value_type: ZSET
+    key: "data:{1}.1.1217905.Java 21"
+    value: "('21.0.2', 1)"
+  - value_type: ZSET
+    key: "data:{1}.2.1217905"
+    value: "('Windows', 1)"
+  - value_type: ZSET
+    key: "data:{1}.2.1217905.Windows"
+    value: "('Windows 11', 1)"
+  - value_type: ZSET
+    key: "data:{1}.38279.1217905"
+    value: "('Paper', 1)"
+  - value_type: ZSET
+    key: "data:{1}.5.1217905"
+    value: "('online', 1)"
+  - value_type: ZSET
+    key: "data:{1}.6.1217905"
+    value: "('1.21', 1)"
+  - value_type: ZSET
+    key: "data:{1}.7.1217905"
+    value: "('24', 1)"
+  - value_type: ZSET
+    key: "data:{1}.8.1217905"
+    value: "('amd64', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335502.1217905"
+    value: "('online', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335503.1217905"
+    value: "('1.21', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335504.1217905"
+    value: "('Paper', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335505.1217905"
+    value: "('1.0.0-SNAPSHOT', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335506.1217905"
+    value: "('24', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335507.1217905"
+    value: "('amd64', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335508.1217905"
+    value: "('Windows', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335508.1217905.Windows"
+    value: "('Windows 11', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335510.1217905"
+    value: "('Java 21', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335510.1217905.Java 21"
+    value: "('21.0.2', 1)"
+  - value_type: ZSET
+    key: "data:{27400}.335512.1217905"
+    value: "('Simple Pie Value', 1)"
+removed: []

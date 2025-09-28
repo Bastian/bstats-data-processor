@@ -3,6 +3,9 @@ name = "data-processor"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+test-fixtures = [] # Fixed time in tests for consistent snapshots
+
 [dependencies]
 phf = { version = "0.13.1", features = ["macros"] }
 serde = { version = "1.0.226", features = ["derive"] }
@@ -32,4 +35,12 @@ deadpool = { version = "0.12.3", default-features = false, features = [
 [dev-dependencies]
 testcontainers = "0.25.0"
 libc = "0.2"
+insta = { version = "1.43.2", features = ["yaml"] }
 tokio = { version = "1", features = ["full", "test-util"] }
+
+# Recommended settings for insta and similar
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3

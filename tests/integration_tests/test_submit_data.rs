@@ -4,27 +4,29 @@ use actix_web::{http::header::ContentType, test, web, App};
 use data_processor::submit_data;
 use serde_json::json;
 
-use crate::helper::test_environment::TestEnvironment;
+use crate::helper::{redis_dump, test_environment::TestEnvironment};
 
 #[actix_web::test]
 async fn test_submit_data() {
     let test_environment = TestEnvironment::with_data().await;
-
     let redis_pool = test_environment.redis_pool();
-
     let app = test::init_service(
         App::new()
             .app_data(web::Data::new(redis_pool.clone()))
             .service(submit_data),
     )
     .await;
+
+    let redis_state_before =
+        redis_dump::capture(&mut test_environment.redis_connection().await).await;
+
     let req = test::TestRequest::post()
         .uri("/bukkit")
         .peer_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 1111))
         .insert_header(ContentType::json())
         .set_payload(
             json!({
-                "playerAmount": 0,
+                "playerAmount": 25,
                 "onlineMode": 1,
                 "bukkitVersion": "1.21-38-1f5db50 (MC: 1.21)",
                 "bukkitName": "Paper",
@@ -53,8 +55,16 @@ async fn test_submit_data() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
+    assert_eq!(resp.status().as_u16(), 200);
 
     let body = test::read_body(resp).await;
     assert_eq!(body, "");
+
+    let redis_state_after =
+        redis_dump::capture(&mut test_environment.redis_connection().await).await;
+
+    let diff = redis_dump::diff(&redis_state_before, &redis_state_after);
+    insta::with_settings!({description => "Redis state changes after data submission"}, {
+        insta::assert_yaml_snapshot!(diff);
+    });
 }
