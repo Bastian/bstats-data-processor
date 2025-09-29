@@ -1,7 +1,10 @@
-.PHONY: build test run clean lint fmt
+.PHONY: build test run clean lint fmt setup
 
 build:
 	cargo build
+
+setup:
+	git config core.hooksPath .githooks
 
 check: lint fmt test
 
@@ -24,6 +27,7 @@ lint:
 
 fmt:
 	cargo fmt --check
+
 
 update-test-environment:
 	cd src/test_support/environment && ./import
