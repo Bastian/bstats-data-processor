@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use maxminddb::{geoip2, MaxMindDbError, Reader};
+use maxminddb::{MaxMindDbError, Reader, geoip2};
 use once_cell::sync::Lazy;
 use phf::phf_map;
 

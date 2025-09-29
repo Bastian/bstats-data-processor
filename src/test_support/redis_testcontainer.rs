@@ -1,9 +1,9 @@
-use crate::util::redis::{get_redis_cluster_pool, RedisClusterPool};
+use crate::util::redis::{RedisClusterPool, get_redis_cluster_pool};
 use std::sync::{Arc, OnceLock};
 use testcontainers::{
+    ContainerAsync, GenericImage, ImageExt,
     core::{ExecCommand, IntoContainerPort, WaitFor},
     runners::AsyncRunner,
-    ContainerAsync, GenericImage, ImageExt,
 };
 use tokio::sync::{Mutex, OnceCell};
 
@@ -38,13 +38,13 @@ impl RedisTestcontainer {
             *guard = Some(container);
 
             register_global_teardown();
-            std::env::set_var("REDIS_CLUSTER__URLS", &redis_urls);
+            unsafe { std::env::set_var("REDIS_CLUSTER__URLS", &redis_urls) };
         }
 
         let redis_urls = guard.as_ref().unwrap().redis_urls.clone();
         drop(guard);
 
-        std::env::set_var("REDIS_CLUSTER__URLS", &redis_urls);
+        unsafe { std::env::set_var("REDIS_CLUSTER__URLS", &redis_urls) };
         let pool = get_redis_cluster_pool().await;
 
         Self { pool }

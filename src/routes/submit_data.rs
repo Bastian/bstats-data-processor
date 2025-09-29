@@ -1,4 +1,4 @@
-use actix_web::{error, post, web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, error, post, web};
 
 use crate::data_submission;
 use crate::submit_data_schema::SubmitDataSchema;
@@ -40,7 +40,7 @@ pub async fn submit_data(
 mod integration_tests {
     use super::*;
     use crate::test_support::{redis_dump, test_environment::TestEnvironment};
-    use actix_web::{http::header::ContentType, test, web, App};
+    use actix_web::{App, http::header::ContentType, test, web};
     use serde_json::json;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 

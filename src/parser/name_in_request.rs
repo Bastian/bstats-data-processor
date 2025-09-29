@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
 
@@ -217,14 +217,18 @@ mod tests {
         let schema = get_schema();
 
         // Non-existent field
-        assert!(parser("nonExistent", "global", None, None, None)
-            .parse(&schema)
-            .is_none());
+        assert!(
+            parser("nonExistent", "global", None, None, None)
+                .parse(&schema)
+                .is_none()
+        );
 
         // Invalid position
-        assert!(parser("globalStringField", "invalid", None, None, None)
-            .parse(&schema)
-            .is_none());
+        assert!(
+            parser("globalStringField", "invalid", None, None, None)
+                .parse(&schema)
+                .is_none()
+        );
 
         // Complex values
         assert_eq!(

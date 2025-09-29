@@ -1,4 +1,4 @@
-use actix_web::{error, web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, error, web};
 
 use crate::{
     data_submission::handle_data_submission,

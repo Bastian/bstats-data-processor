@@ -1,7 +1,7 @@
 use crate::{
     models::charts::{
-        chart::{ChartType, DefaultChartTemplate},
         Chart,
+        chart::{ChartType, DefaultChartTemplate},
     },
     models::service::Service,
     models::software::Software,

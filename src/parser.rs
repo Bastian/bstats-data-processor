@@ -36,13 +36,13 @@ pub fn get_parser(
         Some("bukkitMinecraftVersion") => {
             return Some(Box::new(
                 bukkit_minecraft_version::BukkitMinecraftVersionParser,
-            ))
+            ));
         }
         Some("bukkitServerSoftware") => {
-            return Some(Box::new(bukkit_server_software::BukkitServerSoftwareParser))
+            return Some(Box::new(bukkit_server_software::BukkitServerSoftwareParser));
         }
         Some("bungeecordVersion") => {
-            return Some(Box::new(bungeecord_version::BungeecordVersionParser))
+            return Some(Box::new(bungeecord_version::BungeecordVersionParser));
         }
         _ => (),
     }

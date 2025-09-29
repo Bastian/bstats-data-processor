@@ -1,5 +1,5 @@
 use phf::phf_ordered_map;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
 

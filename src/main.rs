@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer, web};
 use data_processor::{routes, util::redis::get_redis_cluster_pool};
 
 #[actix_web::main]

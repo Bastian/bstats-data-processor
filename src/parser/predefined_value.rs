@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::{
     models::charts::{simple_pie::SimplePie, single_line_chart::SingleLineChart},

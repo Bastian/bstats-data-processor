@@ -1,4 +1,4 @@
-use actix_web::{error, post, web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, error, post, web};
 
 use crate::legacy_data_submission;
 use crate::legacy_submit_data_schema::LegacySubmitDataSchema;

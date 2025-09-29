@@ -14,7 +14,7 @@ use crate::submit_data_schema::SubmitDataServiceSchema;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
-use actix_web::{error, web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, error, web};
 use deadpool_redis::cluster::Connection;
 
 pub async fn handle_data_submission(
