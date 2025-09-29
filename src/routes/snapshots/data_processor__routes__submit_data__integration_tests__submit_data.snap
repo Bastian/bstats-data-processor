@@ -1,6 +1,5 @@
 ---
-source: src/routes/mod.rs
-assertion_line: 136
+source: src/routes/submit_data.rs
 description: Redis state changes after data submission
 expression: diff
 ---
