@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use data_processor::{legacy_submit_data, submit_data, util::redis::get_redis_cluster_pool};
+use data_processor::{routes, util::redis::get_redis_cluster_pool};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -14,8 +14,8 @@ async fn main() -> std::io::Result<()> {
     let mut http_server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .service(submit_data)
-            .service(legacy_submit_data)
+            .service(routes::submit_data::submit_data)
+            .service(routes::legacy::legacy_submit_data)
     });
 
     if let Ok(workers) = std::env::var("WORKERS") {

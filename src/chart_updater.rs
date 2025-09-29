@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use redis::AsyncCommands;
 
 use crate::{
-    charts::{
+    date_util::tms2000_to_timestamp,
+    models::charts::{
         advanced_pie::AdvancedPie,
         chart::ChartType,
         drilldown_pie::DrilldownPie,
@@ -12,11 +13,10 @@ use crate::{
         single_line_chart::{SingleLineChart, SingleLineChartFilter},
         Chart,
     },
-    date_util::tms2000_to_timestamp,
     submit_data_schema::SubmitDataChartSchema,
 };
 
-use crate::charts::chart::ChartFilter;
+use crate::models::charts::chart::ChartFilter;
 
 pub async fn update_chart<C: AsyncCommands>(
     chart: &Chart,

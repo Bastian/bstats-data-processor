@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::charts::chart::ChartFilter;
+use crate::models::charts::chart::ChartFilter;
 
 #[derive(Debug, Validate, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub struct SingleLineChart {

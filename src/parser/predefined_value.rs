@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
 use crate::{
-    charts::{simple_pie::SimplePie, single_line_chart::SingleLineChart},
+    models::charts::{simple_pie::SimplePie, single_line_chart::SingleLineChart},
     submit_data_schema::SubmitDataSchema,
 };
 

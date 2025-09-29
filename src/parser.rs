@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::{charts::chart::DefaultChartTemplate, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::chart::DefaultChartTemplate, submit_data_schema::SubmitDataSchema};
 
 pub mod bukkit_minecraft_version;
 pub mod bukkit_server_software;

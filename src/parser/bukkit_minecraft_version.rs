@@ -1,4 +1,4 @@
-use crate::{charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Value};

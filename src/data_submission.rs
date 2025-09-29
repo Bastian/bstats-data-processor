@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use crate::chart_updater::update_chart;
-use crate::charts;
 use crate::date_util::date_to_tms2000;
+use crate::models::charts;
+use crate::models::service;
+use crate::models::software;
 use crate::parser;
 use crate::ratelimits::is_ratelimited;
-use crate::service;
-use crate::software;
 use crate::submit_data_schema::SubmitDataChartSchema;
 use crate::submit_data_schema::SubmitDataSchema;
 use crate::submit_data_schema::SubmitDataServiceSchema;

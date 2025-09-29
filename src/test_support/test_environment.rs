@@ -1,10 +1,10 @@
 use crate::{
-    charts::{
+    models::charts::{
         chart::{ChartType, DefaultChartTemplate},
         Chart,
     },
-    service::Service,
-    software::Software,
+    models::service::Service,
+    models::software::Software,
     util::redis::RedisClusterPool,
 };
 use deadpool_redis::cluster::Connection;
@@ -35,7 +35,7 @@ impl TestEnvironment {
 
     /// Load default test environment
     pub async fn with_data() -> Self {
-        TestEnvironment::from_files("tests/environment")
+        TestEnvironment::from_files("src/test_support/environment")
             .await
             .expect("failed to load test data from files")
     }

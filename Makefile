@@ -26,7 +26,7 @@ fmt:
 	cargo fmt --check
 
 update-test-environment:
-	cd tests/environment && ./import
+	cd src/test_support/environment && ./import
 
 # Accept all new snapshot files created by the tests
 accept-snapshots:

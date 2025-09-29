@@ -5,7 +5,7 @@ use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 
 use crate::cache::Cache;
-use crate::charts::chart::DefaultChartTemplate;
+use crate::models::charts::chart::DefaultChartTemplate;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Software {

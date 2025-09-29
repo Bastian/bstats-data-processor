@@ -1,7 +1,7 @@
 use phf::phf_ordered_map;
 use serde_json::{json, Value};
 
-use crate::{charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
 
 use super::Parser;
 
