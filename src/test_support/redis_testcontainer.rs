@@ -51,6 +51,26 @@ impl RedisTestcontainer {
     }
 
     async fn start_cluster() -> SharedRedisContainer {
+        // Clean up any orphaned containers from previous test runs
+        let _ = std::process::Command::new("docker")
+            .args([
+                "ps",
+                "-a",
+                "--filter",
+                "label=bstats.test=redis-cluster",
+                "-q",
+            ])
+            .output()
+            .and_then(|output| {
+                let ids = String::from_utf8_lossy(&output.stdout);
+                for id in ids.lines().filter(|s| !s.is_empty()) {
+                    let _ = std::process::Command::new("docker")
+                        .args(["rm", "-f", id])
+                        .status();
+                }
+                Ok(())
+            });
+
         let container = GenericImage::new("grokzen/redis-cluster", "7.0.7")
             .with_wait_for(WaitFor::message_on_stdout(
                 "Running mode=cluster, port=7000",
@@ -69,6 +89,7 @@ impl RedisTestcontainer {
             .with_env_var("SLAVES_PER_MASTER", "0")
             .with_env_var("INITIAL_PORT", "7000")
             .with_env_var("IP", "0.0.0.0")
+            .with_label("bstats.test", "redis-cluster")
             .start()
             .await
             .expect("Failed to start Redis container");
@@ -158,25 +179,30 @@ impl RedisTestcontainer {
     }
 }
 
+// Common cleanup logic used by both atexit and signal handlers
+fn perform_cleanup() {
+    if let Some(shared) = SHARED_CONTAINER.get() {
+        if let Ok(mut guard) = shared.try_lock() {
+            if let Some(shared_container) = guard.take() {
+                let id = shared_container.container_id.clone();
+
+                // Prevent async Drop from running (no Tokio runtime now)
+                std::mem::forget(shared_container);
+
+                // Force remove the container; ignore errors
+                let _ = std::process::Command::new("docker")
+                    .args(["rm", "-f", &id])
+                    .status();
+            }
+        }
+    }
+}
+
 // Register a one-time atexit hook to tear down the shared container
 fn register_global_teardown() {
     REGISTERED_TEARDOWN.get_or_init(|| {
         extern "C" fn cleanup() {
-            if let Some(shared) = SHARED_CONTAINER.get() {
-                if let Ok(mut guard) = shared.try_lock() {
-                    if let Some(shared_container) = guard.take() {
-                        let id = shared_container.container_id.clone();
-
-                        // Prevent async Drop from running (no Tokio runtime now)
-                        std::mem::forget(shared_container);
-
-                        // Force remove the container; ignore errors
-                        let _ = std::process::Command::new("docker")
-                            .args(["rm", "-f", &id])
-                            .status();
-                    }
-                }
-            }
+            perform_cleanup();
         }
 
         unsafe { libc::atexit(cleanup) };

@@ -1,4 +1,4 @@
-.PHONY: build test run clean lint fmt setup
+.PHONY: build test run clean lint fmt setup cleanup-containers
 
 build:
 	cargo build
@@ -41,3 +41,7 @@ accept-snapshots:
 		mv "$$file" "$${file%.new}"; \
 		sed -i '/^assertion_line: [0-9]\+$$/d' "$${file%.new}"; \
 	done
+
+# Remove orphaned testcontainers (useful after Ctrl+C during tests)
+cleanup-containers:
+	docker ps -a --filter "label=bstats.test=redis-cluster" -q | xargs -r docker rm -f
