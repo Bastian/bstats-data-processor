@@ -1,4 +1,4 @@
-use data_processor::{
+use crate::{
     charts::{
         chart::{ChartType, DefaultChartTemplate},
         Chart,

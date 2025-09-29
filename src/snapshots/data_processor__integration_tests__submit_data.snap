@@ -1,5 +1,5 @@
 ---
-source: tests/integration_tests/test_submit_data.rs
+source: src/lib.rs
 description: Redis state changes after data submission
 expression: diff
 ---

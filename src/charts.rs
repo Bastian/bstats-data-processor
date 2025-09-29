@@ -90,3 +90,37 @@ pub async fn find_by_id<C: AsyncCommands>(
     CACHE.insert(id, chart.clone()).await;
     Ok(Some(chart))
 }
+
+#[cfg(all(test, feature = "integration-tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::test_support::test_environment::TestEnvironment;
+
+    #[tokio::test]
+    async fn test_find_by_id() {
+        let test_environment = TestEnvironment::with_data().await;
+        let mut con = test_environment.redis_connection().await;
+
+        let chart = find_by_id(&mut con, 3).await;
+        assert_eq!(chart.unwrap().unwrap().id_custom, "servers");
+    }
+
+    #[tokio::test]
+    async fn test_find_by_ids() {
+        let test_environment = TestEnvironment::with_data().await;
+        let mut con = test_environment.redis_connection().await;
+
+        let charts: std::collections::HashMap<u64, Option<Chart>> =
+            find_by_ids(&mut con, vec![3, 4]).await.unwrap();
+
+        assert_eq!(
+            charts.get(&3).unwrap().as_ref().unwrap().id_custom.clone(),
+            "servers"
+        );
+
+        assert_eq!(
+            charts.get(&4).unwrap().as_ref().unwrap().id_custom.clone(),
+            "players"
+        );
+    }
+}

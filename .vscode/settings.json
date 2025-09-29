@@ -1,9 +1,4 @@
 {
-  "cSpell.words": [
-    "bukkit",
-    "bungeecord",
-    "ratelimited",
-    "ratelimits",
-    "testcontainer"
-  ]
+  // We don't want that integration tests are dimmed down in the editor
+  "rust-analyzer.cargo.features": ["integration-tests"]
 }

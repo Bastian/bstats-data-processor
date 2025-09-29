@@ -102,3 +102,38 @@ async fn _find_service_id_by_software_url_and_name<C: AsyncCommands>(
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration-tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::test_support::test_environment::TestEnvironment;
+
+    #[tokio::test]
+    async fn test_find_all() {
+        let test_environment = TestEnvironment::with_data().await;
+
+        let mut con = test_environment.redis_connection().await;
+
+        let services: Vec<Service> = find_all(&mut con).await.unwrap();
+        assert_eq!(services.len(), test_environment.services().len());
+        assert_eq!(services[0].name, "_bukkit_");
+        assert_eq!(services[0].global, true);
+
+        // In an empty environment, no data should be returned
+        test_environment.cleanup().await;
+
+        let services: Vec<Service> = find_all(&mut con).await.unwrap();
+        assert_eq!(services.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_software_url_and_name() {
+        let test_environment = TestEnvironment::with_data().await;
+        let mut con = test_environment.redis_connection().await;
+
+        let service = find_by_software_url_and_name(&mut con, "bukkit", "_bukkit_")
+            .await
+            .unwrap();
+        assert_eq!(service.unwrap().name, "_bukkit_");
+    }
+}

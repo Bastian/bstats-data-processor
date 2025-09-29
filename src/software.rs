@@ -112,3 +112,34 @@ async fn _find_software_id_by_url<C: AsyncCommands>(
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration-tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::test_support::test_environment::TestEnvironment;
+
+    #[tokio::test]
+    async fn test_find_all() {
+        let test_environment = TestEnvironment::with_data().await;
+
+        let mut con = test_environment.redis_connection().await;
+
+        let software: Vec<Software> = find_all(&mut con).await.unwrap();
+        assert_eq!(software.len(), test_environment.software().len());
+        assert_eq!(software[0].name, "Bukkit / Spigot");
+        assert_eq!(
+            software[0].default_charts[0].title,
+            "Servers using %plugin.name%"
+        );
+        assert_eq!(software[0].hide_in_plugin_list, false);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_url() {
+        let test_environment = TestEnvironment::with_data().await;
+        let mut con = test_environment.redis_connection().await;
+
+        let software = find_by_url(&mut con, "bukkit").await.unwrap();
+        assert_eq!(software.unwrap().name, "Bukkit / Spigot");
+    }
+}

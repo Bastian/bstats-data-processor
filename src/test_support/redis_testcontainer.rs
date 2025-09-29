@@ -1,4 +1,4 @@
-use data_processor::util::redis::{get_redis_cluster_pool, RedisClusterPool};
+use crate::util::redis::{get_redis_cluster_pool, RedisClusterPool};
 use std::sync::{Arc, OnceLock};
 use testcontainers::{
     core::{ExecCommand, IntoContainerPort, WaitFor},

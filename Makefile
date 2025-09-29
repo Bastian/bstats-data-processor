@@ -11,7 +11,7 @@ test-unit:
 	cargo test --lib
 
 test-integration:
-	cargo test --test integration_tests --features test-fixtures -- --test-threads=1
+	cargo test --lib --features integration-tests integration_tests -- --test-threads=1
 
 run:
 	cargo run
