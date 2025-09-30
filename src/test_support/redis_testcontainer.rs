@@ -47,7 +47,12 @@ impl RedisTestcontainer {
         unsafe { std::env::set_var("REDIS_CLUSTER__URLS", &redis_urls) };
         let pool = get_redis_cluster_pool().await;
 
-        Self { pool }
+        let testcontainer = Self { pool };
+
+        // Ensure that all data from previous tests is cleared
+        testcontainer.cleanup().await;
+
+        testcontainer
     }
 
     async fn start_cluster() -> SharedRedisContainer {
