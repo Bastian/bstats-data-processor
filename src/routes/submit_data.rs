@@ -44,8 +44,12 @@ mod integration_tests {
     use serde_json::json;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-    #[actix_web::test]
-    async fn test_submit_data() {
+    /// Helper function to snapshot the changes made to the Redis database by a
+    /// data submission request with the given payload.
+    ///
+    /// These snapshots allow us to see if a change to the codebase alters the
+    /// data stored in Redis.
+    async fn snapshot_state(name: &str, payload: serde_json::Value) {
         let test_environment = TestEnvironment::with_data().await;
         let redis_pool = test_environment.redis_pool();
         let app = test::init_service(
@@ -62,34 +66,7 @@ mod integration_tests {
             .uri("/bukkit")
             .peer_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 1111))
             .insert_header(ContentType::json())
-            .set_payload(
-                json!({
-                    "playerAmount": 25,
-                    "onlineMode": 1,
-                    "bukkitVersion": "1.21-38-1f5db50 (MC: 1.21)",
-                    "bukkitName": "Paper",
-                    "javaVersion": "21.0.2",
-                    "osName": "Windows 11",
-                    "osArch": "amd64",
-                    "osVersion": "10.0",
-                    "coreCount": 24,
-                    "service": {
-                        "pluginVersion": "1.0.0-SNAPSHOT",
-                        "id": 27400,
-                        "customCharts": [
-                            {
-                                "chartId": "custom_simple_pie_chart",
-                                "data": {
-                                    "value": "Simple Pie Value"
-                                }
-                            }
-                        ]
-                    },
-                    "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
-                    "metricsVersion": "3.0.2"
-                })
-                .to_string(),
-            )
+            .set_payload(payload.to_string())
             .to_request();
 
         let resp = test::call_service(&app, req).await;
@@ -102,8 +79,113 @@ mod integration_tests {
             redis_dump::capture(&mut test_environment.redis_connection().await).await;
 
         let diff = redis_dump::diff(&redis_state_before, &redis_state_after);
-        insta::with_settings!({description => "Redis state changes after data submission"}, {
-            insta::assert_yaml_snapshot!(diff);
+        insta::with_settings!({
+            description => "Redis state changes after data submission",
+            snapshot_path => "__snapshots__",
+            prepend_module_to_snapshot => false,
+        }, {
+            insta::assert_yaml_snapshot!(name, diff);
         });
+    }
+
+    #[actix_web::test]
+    async fn processes_normal_request() {
+        snapshot_state(
+            "normal_request",
+            json!({
+                "playerAmount": 25,
+                "onlineMode": 1,
+                "bukkitVersion": "1.21-38-1f5db50 (MC: 1.21)",
+                "bukkitName": "Paper",
+                "javaVersion": "21.0.2",
+                "osName": "Windows 11",
+                "osArch": "amd64",
+                "osVersion": "10.0",
+                "coreCount": 24,
+                "service": {
+                    "pluginVersion": "1.0.0-SNAPSHOT",
+                    "id": 27400,
+                    "customCharts": [
+                        {
+                            "chartId": "custom_simple_pie_chart",
+                            "data": {
+                                "value": "Simple Pie Value"
+                            }
+                        }
+                    ]
+                },
+                "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                "metricsVersion": "3.0.2"
+            }),
+        )
+        .await;
+    }
+
+    #[actix_web::test]
+    async fn ignores_unknown_top_level_fields() {
+        snapshot_state(
+            "unknown_fields",
+            json!({
+                "unknownField1": "some value",
+                "unknownField2": {
+                    "nestedUnknownField": 123
+                },
+                "service": {
+                    "id": 27400,
+                    "unknownServiceField": 456,
+                },
+                "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                "metricsVersion": "3.0.2",
+            }),
+        )
+        .await;
+    }
+
+    #[actix_web::test]
+    async fn clamps_too_high_player_count() {
+        snapshot_state(
+            "too_high_player_count",
+            json!({
+                "playerAmount": 9999999,
+                "service": {
+                    "id": 27400,
+                },
+                "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                "metricsVersion": "3.0.2"
+            }),
+        )
+        .await;
+    }
+
+    #[actix_web::test]
+    async fn ignores_custom_charts_for_default_charts() {
+        // For the backend, default charts are almost identical to custom
+        // charts. Malicious clients could try to exploit this by sending
+        // default chart data as custom chart data. These should be ignored.
+        snapshot_state(
+            "default_charts_in_custom_charts",
+            json!({
+                "service": {
+                    "id": 27400,
+                    "customCharts": [
+                        {
+                            "chartId": "servers",
+                            "data": {
+                                "value": 456
+                            }
+                        },
+                        {
+                            "chartId": "players",
+                            "data": {
+                                "value": 123
+                            }
+                        }
+                    ]
+                },
+                "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                "metricsVersion": "3.0.2"
+            }),
+        )
+        .await;
     }
 }
