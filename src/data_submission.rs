@@ -108,7 +108,7 @@ pub async fn handle_data_submission(
             match result {
                 Ok(_) => {}
                 Err(e) => {
-                    if e.as_response_error().status_code() != 429 {
+                    if e.as_response_error().status_code() == 429 {
                         // Too many requests can be ignored
                     } else {
                         // TODO Use proper logging framework
