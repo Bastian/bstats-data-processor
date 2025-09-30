@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use crate::chart_updater::update_chart;
-use crate::date_util::date_to_tms2000;
 use crate::models::charts;
 use crate::models::service;
 use crate::models::software;
@@ -11,6 +10,7 @@ use crate::ratelimits::is_ratelimited;
 use crate::submit_data_schema::SubmitDataChartSchema;
 use crate::submit_data_schema::SubmitDataSchema;
 use crate::submit_data_schema::SubmitDataServiceSchema;
+use crate::util::date::date_to_tms2000;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
