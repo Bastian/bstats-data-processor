@@ -188,4 +188,40 @@ mod integration_tests {
         )
         .await;
     }
+
+    #[actix_web::test]
+    async fn rejects_service_for_wrong_platform() {
+        // Service 27400 belongs to software ID 1 (Bukkit), so submitting
+        // it to the bungeecord endpoint should be rejected.
+        let test_environment = TestEnvironment::with_data().await;
+        let redis_pool = test_environment.redis_pool();
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(redis_pool.clone()))
+                .service(submit_data),
+        )
+        .await;
+
+        let req = test::TestRequest::post()
+            .uri("/bungeecord")
+            .peer_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 1111))
+            .insert_header(ContentType::json())
+            .set_payload(
+                json!({
+                    "service": {
+                        "id": 27400,
+                    },
+                    "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                    "metricsVersion": "3.0.2"
+                })
+                .to_string(),
+            )
+            .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status().as_u16(), 400);
+
+        let body = test::read_body(resp).await;
+        assert_eq!(body, "Service does not belong to this software");
+    }
 }

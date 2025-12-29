@@ -125,6 +125,12 @@ pub async fn handle_data_submission(
         Ok(Some(s)) => s,
     };
 
+    if service.software_id != software.id {
+        return Err(error::ErrorBadRequest(
+            "Service does not belong to this software",
+        ));
+    }
+
     if service.global && !is_global_service {
         return Err(error::ErrorBadRequest(
             "You must not send data for global services",
