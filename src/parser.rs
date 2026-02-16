@@ -9,6 +9,7 @@ pub mod java_version;
 pub mod name_in_request;
 pub mod os;
 pub mod predefined_value;
+pub mod semver;
 
 pub trait Parser {
     fn parse(&self, schema: &SubmitDataSchema) -> Option<Value>;
@@ -43,6 +44,12 @@ pub fn get_parser(
         }
         Some("bungeecordVersion") => {
             return Some(Box::new(bungeecord_version::BungeecordVersionParser));
+        }
+        Some("phpVersion") => {
+            return Some(Box::new(semver::SemVerParser {
+                field_name: "phpVersion".to_string(),
+                label_prefix: "PHP".to_string(),
+            }));
         }
         _ => (),
     }
