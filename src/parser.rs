@@ -2,9 +2,11 @@ use serde_json::Value;
 
 use crate::{models::charts::chart::DefaultChartTemplate, submit_data_schema::SubmitDataSchema};
 
+pub mod auth_mode;
 pub mod bukkit_minecraft_version;
 pub mod bukkit_server_software;
 pub mod bungeecord_version;
+pub mod hytale_version;
 pub mod java_version;
 pub mod name_in_request;
 pub mod os;
@@ -44,6 +46,12 @@ pub fn get_parser(
         }
         Some("bungeecordVersion") => {
             return Some(Box::new(bungeecord_version::BungeecordVersionParser));
+        }
+        Some("hytaleAuthMode") => {
+            return Some(Box::new(auth_mode::HytaleAuthModeParser));
+        }
+        Some("hytaleVersion") => {
+            return Some(Box::new(hytale_version::HytaleVersionParser));
         }
         Some("phpVersion") => {
             return Some(Box::new(semver::SemVerParser {
