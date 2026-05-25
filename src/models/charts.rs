@@ -1,4 +1,5 @@
 pub mod advanced_pie;
+pub mod bar;
 pub mod chart;
 pub mod drilldown_pie;
 pub mod simple_map;

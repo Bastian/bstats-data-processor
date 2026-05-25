@@ -1,0 +1,31 @@
+---
+source: src/routes/submit_data.rs
+description: Redis state changes after data submission
+expression: diff
+---
+added:
+  - value_type: HASH
+    key: "data:3.1"
+    value: "{'3141592200000': '1'}"
+  - value_type: HASH
+    key: "data:335500.1"
+    value: "{'3141592200000': '1'}"
+  - value_type: HASH
+    key: "data:{27400}.335513.1217905"
+    value: "{'Feature A:0': '0'}, {'Feature A:1': '1'}, {'Feature B:0': '1'}, {'Feature B:1': '0'}"
+  - value_type: HASH
+    key: "data:{27400}.335514.1217905"
+    value: "{'Feature A:0': '1'}"
+  - value_type: STRING
+    key: "ratelimit:1#1.1.1.1.bukkit.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:1#7386d410-f71e-447c-b356-ee809c7db098.bukkit.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:27400#1.1.1.1.bukkit.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:27400#7386d410-f71e-447c-b356-ee809c7db098.bukkit.1217905"
+    value: "'1'"
+removed: []

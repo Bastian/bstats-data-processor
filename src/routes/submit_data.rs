@@ -158,6 +158,40 @@ mod integration_tests {
     }
 
     #[actix_web::test]
+    async fn processes_bar_charts() {
+        snapshot_state(
+            "bar_charts",
+            json!({
+                "service": {
+                    "id": 27400,
+                    "customCharts": [
+                        {
+                            "chartId": "custom_advanced_bar_chart",
+                            "data": {
+                                "values": {
+                                    "Feature A": [0, 1],
+                                    "Feature B": [1, 0]
+                                }
+                            }
+                        },
+                        {
+                            "chartId": "custom_simple_bar_chart",
+                            "data": {
+                                "values": {
+                                    "Feature A": [1]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                "metricsVersion": "3.0.2"
+            }),
+        )
+        .await;
+    }
+
+    #[actix_web::test]
     async fn ignores_custom_charts_for_default_charts() {
         // For the backend, default charts are almost identical to custom
         // charts. Malicious clients could try to exploit this by sending

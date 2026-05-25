@@ -6,6 +6,7 @@ use crate::{
     models::charts::{
         Chart,
         advanced_pie::AdvancedPie,
+        bar::Bar,
         chart::ChartType,
         drilldown_pie::DrilldownPie,
         simple_map::SimpleMap,
@@ -102,11 +103,18 @@ pub async fn update_chart<C: AsyncCommands>(
         ChartType::AdvancedMap => {
             // TODO Currently not supported
         }
-        ChartType::SimpleBar => {
-            // TODO Currently not supported
-        }
-        ChartType::AdvancedBar => {
-            // TODO Currently not supported
+        ChartType::SimpleBar | ChartType::AdvancedBar => {
+            let data: Bar = serde_json::from_value(data.data.clone())?;
+            for (category, bar_values) in data.values.iter() {
+                update_bar_chart_data(
+                    chart.service_id,
+                    chart.id,
+                    tms2000,
+                    category,
+                    bar_values,
+                    pipeline,
+                );
+            }
         }
     }
     Ok(())
@@ -156,6 +164,23 @@ pub async fn update_line_chart_data<C: AsyncCommands>(
             eprintln!("Failed to update line chart data: {}", e);
         }
     }
+}
+
+/// Accumulates bar values in a hash under the field `<category>:<bar_index>`,
+/// matching the format the backend reads in `getBarChartData`.
+pub fn update_bar_chart_data(
+    service_id: u32,
+    chart_id: u64,
+    tms2000: i64,
+    category: &str,
+    bar_values: &[i64],
+    pipeline: &mut redis::Pipeline,
+) {
+    let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
+    for (bar_index, bar_value) in bar_values.iter().enumerate() {
+        pipeline.hincr(&key, format!("{}:{}", category, bar_index), *bar_value);
+    }
+    pipeline.expire(&key, 60 * 61);
 }
 
 pub fn update_drilldown_pie_data(

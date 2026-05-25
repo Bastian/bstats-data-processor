@@ -773,5 +773,25 @@
       }
     },
     "serviceId": 27400
+  },
+  {
+    "id": 335513,
+    "idCustom": "custom_advanced_bar_chart",
+    "type": "advanced_bar",
+    "position": 13,
+    "title": "Custom Advanced Bar Chart",
+    "isDefault": false,
+    "data": {},
+    "serviceId": 27400
+  },
+  {
+    "id": 335514,
+    "idCustom": "custom_simple_bar_chart",
+    "type": "simple_bar",
+    "position": 14,
+    "title": "Custom Simple Bar Chart",
+    "isDefault": false,
+    "data": {},
+    "serviceId": 27400
   }
 ]
