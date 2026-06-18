@@ -166,6 +166,8 @@ pub async fn update_line_chart_data<C: AsyncCommands>(
     }
 }
 
+const MAX_BARS_PER_CATEGORY: usize = 25;
+
 /// Accumulates bar values in a hash under the field `<category>:<bar_index>`,
 /// matching the format the backend reads in `getBarChartData`.
 pub fn update_bar_chart_data(
@@ -176,8 +178,13 @@ pub fn update_bar_chart_data(
     bar_values: &[i64],
     pipeline: &mut redis::Pipeline,
 ) {
+    // The backend splits hash fields on `:`, so a category containing `:` would
+    // be mis-parsed into a different category. Drop it instead of corrupting data.
+    if category.contains(':') {
+        return;
+    }
     let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
-    for (bar_index, bar_value) in bar_values.iter().enumerate() {
+    for (bar_index, bar_value) in bar_values.iter().take(MAX_BARS_PER_CATEGORY).enumerate() {
         pipeline.hincr(&key, format!("{}:{}", category, bar_index), *bar_value);
     }
     pipeline.expire(&key, 60 * 61);
