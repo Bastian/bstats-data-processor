@@ -97,5 +97,52 @@
       19,
       20
     ]
+  },
+  {
+    "id": 4,
+    "name": "_fabric_",
+    "owner": {
+      "name": "Admin"
+    },
+    "software": {
+      "id": 6
+    },
+    "isGlobal": true,
+    "chartIds": [
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42
+    ]
+  },
+  {
+    "id": 27401,
+    "name": "TestFabricModForIntegrationTests",
+    "owner": {
+      "name": "BtoBastian"
+    },
+    "software": {
+      "id": 6
+    },
+    "isGlobal": false,
+    "chartIds": [
+      335515,
+      335516,
+      335517,
+      335518,
+      335519,
+      335520,
+      335521,
+      335522,
+      335523,
+      335524,
+      335525
+    ]
   }
 ]

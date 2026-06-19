@@ -534,6 +534,179 @@
     "serviceId": 2
   },
   {
+    "id": 33,
+    "idCustom": "servers",
+    "type": "single_linechart",
+    "position": 0,
+    "title": "Servers",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": false,
+        "maxValue": 1,
+        "minValue": 1
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 34,
+    "idCustom": "players",
+    "type": "single_linechart",
+    "position": 1,
+    "title": "Players",
+    "isDefault": true,
+    "data": {
+      "lineName": "Players",
+      "filter": {
+        "enabled": true,
+        "maxValue": 200,
+        "minValue": 0
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 35,
+    "idCustom": "onlineMode",
+    "type": "simple_pie",
+    "position": 2,
+    "title": "Online mode",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 36,
+    "idCustom": "minecraftVersion",
+    "type": "simple_pie",
+    "position": 3,
+    "title": "Minecraft Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 37,
+    "idCustom": "coreCount",
+    "type": "simple_pie",
+    "position": 4,
+    "title": "Core count",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": true,
+        "useRegex": true,
+        "blacklist": false,
+        "filter": [
+          "([0-9]){1,2}"
+        ]
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 38,
+    "idCustom": "osArch",
+    "type": "simple_pie",
+    "position": 5,
+    "title": "System arch",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 39,
+    "idCustom": "os",
+    "type": "drilldown_pie",
+    "position": 6,
+    "title": "Operating System",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 40,
+    "idCustom": "location",
+    "type": "simple_pie",
+    "position": 7,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 41,
+    "idCustom": "javaVersion",
+    "type": "drilldown_pie",
+    "position": 8,
+    "title": "Java Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
+    "id": 42,
+    "idCustom": "locationMap",
+    "type": "simple_map",
+    "position": 9,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
     "id": 38279,
     "idCustom": "serverSoftware",
     "type": "simple_pie",
@@ -793,5 +966,195 @@
     "isDefault": false,
     "data": {},
     "serviceId": 27400
+  },
+  {
+    "id": 335515,
+    "idCustom": "servers",
+    "type": "single_linechart",
+    "position": 0,
+    "title": "Servers using TestFabricModForIntegrationTests",
+    "isDefault": true,
+    "data": {
+      "lineName": "Servers",
+      "filter": {
+        "enabled": false,
+        "maxValue": 1,
+        "minValue": 1
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335516,
+    "idCustom": "players",
+    "type": "single_linechart",
+    "position": 1,
+    "title": "Players on servers using TestFabricModForIntegrationTests",
+    "isDefault": true,
+    "data": {
+      "lineName": "Players",
+      "filter": {
+        "enabled": true,
+        "maxValue": 200,
+        "minValue": 0
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335517,
+    "idCustom": "onlineMode",
+    "type": "simple_pie",
+    "position": 2,
+    "title": "Online mode",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335518,
+    "idCustom": "minecraftVersion",
+    "type": "simple_pie",
+    "position": 3,
+    "title": "Minecraft Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335519,
+    "idCustom": "pluginVersion",
+    "type": "simple_pie",
+    "position": 4,
+    "title": "Plugin Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335520,
+    "idCustom": "coreCount",
+    "type": "simple_pie",
+    "position": 5,
+    "title": "Core count",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": true,
+        "useRegex": true,
+        "blacklist": false,
+        "filter": [
+          "([0-9]){1,2}"
+        ]
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335521,
+    "idCustom": "osArch",
+    "type": "simple_pie",
+    "position": 6,
+    "title": "System arch",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335522,
+    "idCustom": "os",
+    "type": "drilldown_pie",
+    "position": 7,
+    "title": "Operating System",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335523,
+    "idCustom": "location",
+    "type": "simple_pie",
+    "position": 8,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335524,
+    "idCustom": "javaVersion",
+    "type": "drilldown_pie",
+    "position": 9,
+    "title": "Java Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335525,
+    "idCustom": "locationMap",
+    "type": "simple_map",
+    "position": 10,
+    "title": "Server Location",
+    "isDefault": true,
+    "data": {
+      "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
   }
 ]

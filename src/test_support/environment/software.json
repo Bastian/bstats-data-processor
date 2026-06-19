@@ -645,5 +645,209 @@
       }
     ],
     "hideInPluginList": false
+  },
+  {
+    "id": 6,
+    "name": "Fabric",
+    "url": "fabric",
+    "globalPlugin": 4,
+    "metricsClass": "https://github.com/Bastian/bstats-metrics/blob/master/bstats-fabric/src/main/java/org/bstats/fabric/Metrics.java",
+    "examplePlugin": "https://github.com/Bastian/bstats-metrics/blob/master/bstats-fabric/src/examples/java/ExampleMod.java",
+    "maxRequestsPerIp": 16,
+    "defaultCharts": [
+      {
+        "type": "single_linechart",
+        "title": "Servers using %plugin.name%",
+        "data": {
+          "lineName": "Servers",
+          "filter": {
+            "enabled": false,
+            "maxValue": 1,
+            "minValue": 1
+          }
+        },
+        "requestParser": {
+          "predefinedValue": 1
+        },
+        "idCustom": "servers"
+      },
+      {
+        "type": "single_linechart",
+        "title": "Players on servers using %plugin.name%",
+        "data": {
+          "lineName": "Players",
+          "filter": {
+            "enabled": true,
+            "maxValue": 200,
+            "minValue": 0
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "playerAmount",
+          "type": "number",
+          "position": "global"
+        },
+        "idCustom": "players"
+      },
+      {
+        "type": "simple_pie",
+        "title": "Online mode",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "onlineMode",
+          "position": "global",
+          "type": "boolean",
+          "trueValue": "online",
+          "falseValue": "offline"
+        },
+        "idCustom": "onlineMode"
+      },
+      {
+        "type": "simple_pie",
+        "title": "Minecraft Version",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "minecraftVersion",
+          "position": "global"
+        },
+        "idCustom": "minecraftVersion"
+      },
+      {
+        "type": "simple_pie",
+        "title": "Plugin Version",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "pluginVersion",
+          "position": "plugin"
+        },
+        "idCustom": "pluginVersion"
+      },
+      {
+        "type": "simple_pie",
+        "title": "Core count",
+        "data": {
+          "filter": {
+            "enabled": true,
+            "useRegex": true,
+            "blacklist": false,
+            "filter": [
+              "([0-9]){1,2}"
+            ]
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "coreCount",
+          "type": "number",
+          "position": "global"
+        },
+        "idCustom": "coreCount"
+      },
+      {
+        "type": "simple_pie",
+        "title": "System arch",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "osArch",
+          "position": "global"
+        },
+        "idCustom": "osArch"
+      },
+      {
+        "type": "drilldown_pie",
+        "title": "Operating System",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "position": "global",
+          "useHardcodedParser": "os"
+        },
+        "idCustom": "os"
+      },
+      {
+        "type": "simple_pie",
+        "title": "Server Location",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "predefinedValue": "%country.name%"
+        },
+        "idCustom": "location"
+      },
+      {
+        "type": "drilldown_pie",
+        "title": "Java Version",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "useHardcodedParser": "javaVersion",
+          "position": "global"
+        },
+        "idCustom": "javaVersion"
+      },
+      {
+        "type": "simple_map",
+        "title": "Server Location",
+        "data": {
+          "valueName": "Servers",
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "predefinedValue": "AUTO"
+        },
+        "idCustom": "locationMap"
+      }
+    ],
+    "hideInPluginList": false
   }
 ]
