@@ -707,6 +707,23 @@
     "serviceId": 4
   },
   {
+    "id": 43,
+    "idCustom": "fabricVersion",
+    "type": "simple_pie",
+    "position": 10,
+    "title": "Fabric Version",
+    "isDefault": true,
+    "data": {
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 4
+  },
+  {
     "id": 38279,
     "idCustom": "serverSoftware",
     "type": "simple_pie",
@@ -1148,6 +1165,23 @@
     "isDefault": true,
     "data": {
       "valueName": "Servers",
+      "filter": {
+        "enabled": false,
+        "useRegex": false,
+        "blacklist": false,
+        "filter": []
+      }
+    },
+    "serviceId": 27401
+  },
+  {
+    "id": 335526,
+    "idCustom": "fabricVersion",
+    "type": "simple_pie",
+    "position": 11,
+    "title": "Fabric Version",
+    "isDefault": true,
+    "data": {
       "filter": {
         "enabled": false,
         "useRegex": false,

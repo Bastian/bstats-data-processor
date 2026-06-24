@@ -41,7 +41,6 @@ mod integration_tests {
     use super::*;
     use crate::test_support::{redis_dump, test_environment::TestEnvironment};
     use actix_web::{App, http::header::ContentType, test, web};
-    use redis::AsyncCommands;
     use serde_json::json;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
@@ -262,55 +261,26 @@ mod integration_tests {
 
     #[actix_web::test]
     async fn accepts_fabric_and_updates_global_rollup() {
-        let test_environment = TestEnvironment::with_data().await;
-        let redis_pool = test_environment.redis_pool();
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::new(redis_pool.clone()))
-                .service(submit_data),
+        snapshot_state(
+            "fabric_global_rollup",
+            json!({
+                "playerAmount": 12,
+                "onlineMode": 1,
+                "minecraftVersion": "1.21.6",
+                "fabricVersion": "0.16.14",
+                "pluginVersion": "1.0.0-SNAPSHOT",
+                "javaVersion": "21.0.2",
+                "osName": "Linux",
+                "osArch": "amd64",
+                "osVersion": "6.8.0",
+                "coreCount": 8,
+                "service": {
+                    "id": 27401,
+                },
+                "serverUUID": "7386d410-f71e-447c-b356-ee809c7db099",
+                "metricsVersion": "3.0.2"
+            }),
         )
         .await;
-
-        let redis_state_before =
-            redis_dump::capture(&mut test_environment.redis_connection().await).await;
-
-        let req = test::TestRequest::post()
-            .uri("/fabric")
-            .peer_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 1111))
-            .insert_header(ContentType::json())
-            .set_payload(
-                json!({
-                    "playerAmount": 12,
-                    "onlineMode": 1,
-                    "minecraftVersion": "1.21.6",
-                    "javaVersion": "21.0.2",
-                    "osName": "Linux",
-                    "osArch": "amd64",
-                    "osVersion": "6.8.0",
-                    "coreCount": 8,
-                    "service": {
-                        "id": 27401,
-                    },
-                    "serverUUID": "7386d410-f71e-447c-b356-ee809c7db099",
-                    "metricsVersion": "3.0.2"
-                })
-                .to_string(),
-            )
-            .to_request();
-
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status().as_u16(), 200);
-
-        let mut con = test_environment.redis_connection().await;
-        let global_servers_points: usize = con.hlen("data:33.1").await.unwrap();
-        assert_eq!(global_servers_points, 1);
-
-        let redis_state_after =
-            redis_dump::capture(&mut test_environment.redis_connection().await).await;
-        let diff = redis_dump::diff(&redis_state_before, &redis_state_after);
-
-        assert!(diff.added.iter().any(|entry| {
-            entry.key.starts_with("data:{4}.36.") && entry.value.contains("'1.21.6'")
-        }));
     }
 }

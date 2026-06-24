@@ -728,6 +728,23 @@
       },
       {
         "type": "simple_pie",
+        "title": "Fabric Version",
+        "data": {
+          "filter": {
+            "enabled": false,
+            "useRegex": false,
+            "blacklist": false,
+            "filter": []
+          }
+        },
+        "requestParser": {
+          "nameInRequest": "fabricVersion",
+          "position": "global"
+        },
+        "idCustom": "fabricVersion"
+      },
+      {
+        "type": "simple_pie",
         "title": "Plugin Version",
         "data": {
           "filter": {

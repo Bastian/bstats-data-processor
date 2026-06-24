@@ -1,0 +1,88 @@
+---
+source: src/routes/submit_data.rs
+description: Redis state changes after data submission
+expression: diff
+---
+added:
+  - value_type: HASH
+    key: "data:33.1"
+    value: "{'3141592200000': '1'}"
+  - value_type: HASH
+    key: "data:335515.1"
+    value: "{'3141592200000': '1'}"
+  - value_type: HASH
+    key: "data:335516.1"
+    value: "{'3141592200000': '12'}"
+  - value_type: HASH
+    key: "data:34.1"
+    value: "{'3141592200000': '12'}"
+  - value_type: STRING
+    key: "ratelimit:4#1.1.1.1.fabric.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:4#7386d410-f71e-447c-b356-ee809c7db099.fabric.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:27401#1.1.1.1.fabric.1217905"
+    value: "'1'"
+  - value_type: STRING
+    key: "ratelimit:27401#7386d410-f71e-447c-b356-ee809c7db099.fabric.1217905"
+    value: "'1'"
+  - value_type: ZSET
+    key: "data:{4}.35.1217905"
+    value: "('online', 1)"
+  - value_type: ZSET
+    key: "data:{4}.36.1217905"
+    value: "('1.21.6', 1)"
+  - value_type: ZSET
+    key: "data:{4}.37.1217905"
+    value: "('8', 1)"
+  - value_type: ZSET
+    key: "data:{4}.38.1217905"
+    value: "('amd64', 1)"
+  - value_type: ZSET
+    key: "data:{4}.39.1217905"
+    value: "('Linux', 1)"
+  - value_type: ZSET
+    key: "data:{4}.39.1217905.Linux"
+    value: "('6.8.0', 1)"
+  - value_type: ZSET
+    key: "data:{4}.41.1217905"
+    value: "('Java 21', 1)"
+  - value_type: ZSET
+    key: "data:{4}.41.1217905.Java 21"
+    value: "('21.0.2', 1)"
+  - value_type: ZSET
+    key: "data:{4}.43.1217905"
+    value: "('0.16.14', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335517.1217905"
+    value: "('online', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335518.1217905"
+    value: "('1.21.6', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335519.1217905"
+    value: "('1.0.0-SNAPSHOT', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335520.1217905"
+    value: "('8', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335521.1217905"
+    value: "('amd64', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335522.1217905"
+    value: "('Linux', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335522.1217905.Linux"
+    value: "('6.8.0', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335524.1217905"
+    value: "('Java 21', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335524.1217905.Java 21"
+    value: "('21.0.2', 1)"
+  - value_type: ZSET
+    key: "data:{27401}.335526.1217905"
+    value: "('0.16.14', 1)"
+removed: []
