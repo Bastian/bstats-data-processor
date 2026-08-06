@@ -25,6 +25,7 @@ static SERVER_SOFTWARE_BRANDS: phf::OrderedMap<&'static str, &'static str> = phf
     "taco" => "TacoSpigot", // https://github.com/TacoSpigot/TacoSpigot, EOL
     "paper" => "Paper", // https://github.com/PaperMC/Paper
     "folia" => "Folia", // https://github.com/PaperMC/Folia
+    "canvas" => "Canvas", // https://github.com/CraftCanvasMC/Canvas
     "spigot" => "Spigot", // https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse
     "catserver" => "CatServer", // https://github.com/Luohuayu/CatServer/
     "lava" => "Lava", // https://github.com/Timardo/Lava, EOL
@@ -166,6 +167,12 @@ mod tests {
                 bukkit_version: String::from("git-Folia-17 (MC: 1.20.1)"),
                 bukkit_name: String::from("Folia"),
                 expected: String::from("Folia"),
+            },
+            TestCase {
+                name: String::from("Canvas 26.2"),
+                bukkit_version: String::from("26.2-123-a98be48 (MC: 26.2)"),
+                bukkit_name: String::from("Canvas"),
+                expected: String::from("Canvas"),
             },
             TestCase {
                 name: String::from("Arclight 1.21"),
