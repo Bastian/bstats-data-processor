@@ -14,6 +14,7 @@ use crate::util::date::date_to_tms2000;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
+use crate::util::slot_pipeline::SlotPipeline;
 use actix_web::{HttpRequest, HttpResponse, error, web};
 use deadpool_redis::cluster::Connection;
 
@@ -167,7 +168,7 @@ pub async fn handle_data_submission(
     let resolved_charts: std::collections::HashMap<u64, Option<charts::Chart>> =
         charts::find_by_ids(con, service.charts).await.unwrap();
 
-    let mut pipeline = redis::pipe();
+    let mut pipeline = SlotPipeline::new();
 
     for chart_data in chart_data {
         let service_chart: &charts::Chart = match resolved_charts
@@ -190,13 +191,11 @@ pub async fn handle_data_submission(
             tms2000,
             country_iso.as_deref(),
             &mut pipeline,
-            con,
-        )
-        .await;
+        );
     }
 
     pipeline
-        .query_async::<()>(con)
+        .query_async(con)
         .await
         .map_err(error::ErrorInternalServerError)?;
 

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use redis::AsyncCommands;
-
+use crate::util::slot_pipeline::SlotPipeline;
 use crate::{
     models::charts::{
         Chart,
@@ -19,14 +18,12 @@ use crate::{
 
 use crate::models::charts::chart::ChartFilter;
 
-pub async fn update_chart<C: AsyncCommands>(
+pub fn update_chart(
     chart: &Chart,
     data: &SubmitDataChartSchema,
     tms2000: i64,
     country_iso: Option<&str>,
-    // Used where possible (currently not possible for line charts)
-    pipeline: &mut redis::Pipeline,
-    con: &mut C,
+    pipeline: &mut SlotPipeline,
 ) -> Result<(), serde_json::Error> {
     match chart.r#type {
         ChartType::SingleLineChart => {
@@ -41,7 +38,7 @@ pub async fn update_chart<C: AsyncCommands>(
                 None => Some(data),
             };
             if let Some(data) = data {
-                update_line_chart_data(chart.id, tms2000, "1", data.value, con).await;
+                update_line_chart_data(chart.id, tms2000, "1", data.value, pipeline);
             }
         }
         ChartType::SimplePie => {
@@ -126,7 +123,7 @@ pub fn update_pie_data(
     tms2000: i64,
     value_name: &str,
     value: u32,
-    pipeline: &mut redis::Pipeline,
+    pipeline: &mut SlotPipeline,
 ) {
     let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
     pipeline.zincr(&key, value_name, value);
@@ -139,31 +136,23 @@ pub fn update_map_data(
     tms2000: i64,
     value_name: &str,
     value: u32,
-    pipeline: &mut redis::Pipeline,
+    pipeline: &mut SlotPipeline,
 ) {
     // The charts are saved the same way
     update_pie_data(service_id, chart_id, tms2000, value_name, value, pipeline);
 }
 
-pub async fn update_line_chart_data<C: AsyncCommands>(
+/// Line chart keys carry no hash tag, so they usually end up in a different
+/// slot than the rest of the request. [`SlotPipeline`] groups them accordingly.
+pub fn update_line_chart_data(
     chart_id: u64,
     tms2000: i64,
     line: &str,
     value: i32,
-    con: &mut C,
+    pipeline: &mut SlotPipeline,
 ) {
-    // TODO Use pipeline (must ensure that it is on the same shard first)
     let key = format!("data:{}.{}", chart_id, line);
-    match con
-        .hincr(key, tms2000_to_timestamp(tms2000) * 1000, value)
-        .await
-    {
-        Ok(()) => (),
-        Err(e) => {
-            // TODO Proper logging framework
-            eprintln!("Failed to update line chart data: {}", e);
-        }
-    }
+    pipeline.hincr(&key, tms2000_to_timestamp(tms2000) * 1000, value);
 }
 
 const MAX_BARS_PER_CATEGORY: usize = 25;
@@ -176,7 +165,7 @@ pub fn update_bar_chart_data(
     tms2000: i64,
     category: &str,
     bar_values: &[i64],
-    pipeline: &mut redis::Pipeline,
+    pipeline: &mut SlotPipeline,
 ) {
     // The backend splits hash fields on `:`, so a category containing `:` would
     // be mis-parsed into a different category. Drop it instead of corrupting data.
@@ -196,7 +185,7 @@ pub fn update_drilldown_pie_data(
     tms2000: i64,
     value_name: &str,
     values: HashMap<String, u32>,
-    pipeline: &mut redis::Pipeline,
+    pipeline: &mut SlotPipeline,
 ) {
     let mut total_value = 0;
     for (value_key, value) in values.iter() {
