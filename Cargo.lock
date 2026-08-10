@@ -690,6 +690,7 @@ dependencies = [
  "chrono",
  "deadpool",
  "deadpool-redis",
+ "futures-util",
  "insta",
  "libc",
  "maxminddb",

@@ -19,6 +19,7 @@ redis-test = "0.12.0"
 tokio = "1.39.1"
 chrono = "0.4.42"
 maxminddb = "0.26.0"
+futures-util = "0.3.31"
 deadpool-redis = { version = "0.22.0", features = ["cluster"] }
 # Must be the same version that deadpool-redis uses (https://github.com/bikeshedder/deadpool/blob/master/redis/Cargo.toml) 
 redis = { version = "0.32.5", features = [
