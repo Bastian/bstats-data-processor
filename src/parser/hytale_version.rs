@@ -10,10 +10,7 @@ pub struct HytaleVersionParser;
 
 impl Parser for HytaleVersionParser {
     fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let version = schema
-            .extra
-            .get("hytaleVersion")
-            .and_then(|v| v.as_str())?;
+        let version = schema.extra.get("hytaleVersion").and_then(|v| v.as_str())?;
         let year_month = extract_year_month(version);
         Some(json!(DrilldownPie {
             values: HashMap::from([(year_month, HashMap::from([(version.to_string(), 1)]))])
