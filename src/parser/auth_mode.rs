@@ -1,14 +1,14 @@
 use serde_json::{Value, json};
 
-use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, parser::ParserInput};
 
 use super::Parser;
 
 pub struct HytaleAuthModeParser;
 
 impl Parser for HytaleAuthModeParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let auth_mode = schema.extra.get("authMode").and_then(|v| v.as_str())?;
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
+        let auth_mode = input.global.get("authMode").and_then(|v| v.as_str())?;
         let normalized = normalize_auth_mode(auth_mode);
         Some(json!(SimplePie { value: normalized }))
     }

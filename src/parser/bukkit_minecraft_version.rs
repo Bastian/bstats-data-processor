@@ -1,4 +1,4 @@
-use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, parser::ParserInput};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{Value, json};
@@ -8,9 +8,9 @@ use super::Parser;
 pub struct BukkitMinecraftVersionParser;
 
 impl Parser for BukkitMinecraftVersionParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
         let version = parse_bukkit_minecraft_version(
-            schema.extra.get("bukkitVersion").and_then(|v| v.as_str()),
+            input.global.get("bukkitVersion").and_then(|v| v.as_str()),
         )?;
         Some(json!(SimplePie { value: version }))
     }

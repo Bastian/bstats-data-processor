@@ -6,6 +6,7 @@ use crate::models::charts;
 use crate::models::service;
 use crate::models::software;
 use crate::parser;
+use crate::parser::ParserInput;
 use crate::ratelimits::is_ratelimited;
 use crate::submit_data_schema::SubmitDataChartSchema;
 use crate::submit_data_schema::SubmitDataSchema;
@@ -148,6 +149,7 @@ pub async fn handle_data_submission(
         None => (None, None),
     };
 
+    let parser_input = ParserInput::from(data);
     let default_charts: Vec<_> = software
         .default_charts
         .iter()
@@ -155,7 +157,7 @@ pub async fn handle_data_submission(
             parser::get_parser(template, country_name.clone()).and_then(|parser| {
                 Some(SubmitDataChartSchema {
                     chart_id: template.id.clone(),
-                    data: parser.parse(data)?,
+                    data: parser.parse(&parser_input)?,
                     trusted: true,
                 })
             })

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 
-use crate::{models::charts::drilldown_pie::DrilldownPie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::drilldown_pie::DrilldownPie, parser::ParserInput};
 
 use super::Parser;
 
@@ -12,9 +12,9 @@ pub struct SemVerParser {
 }
 
 impl Parser for SemVerParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let version = schema
-            .extra
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
+        let version = input
+            .global
             .get(&self.field_name)
             .and_then(|v| v.as_str())?;
         let major_version = get_major_version(version);

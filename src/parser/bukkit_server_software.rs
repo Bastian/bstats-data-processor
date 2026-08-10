@@ -1,17 +1,17 @@
 use phf::phf_ordered_map;
 use serde_json::{Value, json};
 
-use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, parser::ParserInput};
 
 use super::Parser;
 
 pub struct BukkitServerSoftwareParser;
 
 impl Parser for BukkitServerSoftwareParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
         let software_name = parse_bukkit_server_software(
-            schema.extra.get("bukkitVersion").and_then(|v| v.as_str()),
-            schema.extra.get("bukkitName").and_then(|v| v.as_str()),
+            input.global.get("bukkitVersion").and_then(|v| v.as_str()),
+            input.global.get("bukkitName").and_then(|v| v.as_str()),
         )?;
         Some(json!(SimplePie {
             value: software_name

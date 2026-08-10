@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, parser::ParserInput};
 
 use super::Parser;
 
@@ -19,11 +19,11 @@ pub struct NameInRequestParser {
 }
 
 impl Parser for NameInRequestParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
         let raw_value = if self.position == "global" {
-            schema.extra.get(&self.name_in_request).cloned()
+            input.global.get(&self.name_in_request).cloned()
         } else if self.position == "plugin" {
-            schema.service.extra.get(&self.name_in_request).cloned()
+            input.service.get(&self.name_in_request).cloned()
         } else {
             None
         }?;
@@ -66,6 +66,7 @@ impl Parser for NameInRequestParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::submit_data_schema::SubmitDataSchema;
     use std::collections::HashMap;
 
     fn get_schema() -> SubmitDataSchema {
@@ -118,14 +119,14 @@ mod tests {
         // Test string fields
         assert_eq!(
             parser("globalStringField", "global", None, None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": "myGlobalValue"}).as_object().unwrap())
         );
         assert_eq!(
             parser("pluginStringField", "plugin", None, None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": "myPluginValue"}).as_object().unwrap())
@@ -134,14 +135,14 @@ mod tests {
         // Test number fields
         assert_eq!(
             parser("globalNumberField", "global", Some("number"), None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": 42}).as_object().unwrap())
         );
         assert_eq!(
             parser("pluginNumberField", "plugin", Some("number"), None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": 123}).as_object().unwrap())
@@ -155,14 +156,14 @@ mod tests {
         // Boolean fields with default true/false
         assert_eq!(
             parser("globalBooleanField", "global", Some("boolean"), None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": "true"}).as_object().unwrap())
         );
         assert_eq!(
             parser("pluginBooleanField", "plugin", Some("boolean"), None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": "false"}).as_object().unwrap())
@@ -177,7 +178,7 @@ mod tests {
                 Some("enabled"),
                 Some("disabled")
             )
-            .parse(&schema)
+            .parse(&ParserInput::from(&schema))
             .unwrap()
             .as_object(),
             Some(json!({"value": "enabled"}).as_object().unwrap())
@@ -202,7 +203,7 @@ mod tests {
             schema.extra.insert(field_name.to_string(), value);
             assert_eq!(
                 parser(field_name, "global", Some("boolean"), None, None)
-                    .parse(&schema)
+                    .parse(&ParserInput::from(&schema))
                     .unwrap()
                     .as_object(),
                 Some(json!({"value": expected}).as_object().unwrap()),
@@ -219,21 +220,21 @@ mod tests {
         // Non-existent field
         assert!(
             parser("nonExistent", "global", None, None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .is_none()
         );
 
         // Invalid position
         assert!(
             parser("globalStringField", "invalid", None, None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .is_none()
         );
 
         // Complex values
         assert_eq!(
             parser("globalField", "global", None, None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": {"global": "value"}}).as_object().unwrap())
@@ -242,7 +243,7 @@ mod tests {
         // Complex value as boolean
         assert_eq!(
             parser("globalField", "global", Some("boolean"), None, None)
-                .parse(&schema)
+                .parse(&ParserInput::from(&schema))
                 .unwrap()
                 .as_object(),
             Some(json!({"value": "true"}).as_object().unwrap())

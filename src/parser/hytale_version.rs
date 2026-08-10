@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 
-use crate::{models::charts::drilldown_pie::DrilldownPie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::drilldown_pie::DrilldownPie, parser::ParserInput};
 
 use super::Parser;
 
 pub struct HytaleVersionParser;
 
 impl Parser for HytaleVersionParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let version = schema.extra.get("hytaleVersion").and_then(|v| v.as_str())?;
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
+        let version = input.global.get("hytaleVersion").and_then(|v| v.as_str())?;
         let year_month = extract_year_month(version);
         Some(json!(DrilldownPie {
             values: HashMap::from([(year_month, HashMap::from([(version.to_string(), 1)]))])

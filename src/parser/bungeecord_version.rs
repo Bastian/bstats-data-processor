@@ -1,15 +1,15 @@
 use serde_json::{Value, json};
 
-use crate::{models::charts::simple_pie::SimplePie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::simple_pie::SimplePie, parser::ParserInput};
 
 use super::Parser;
 
 pub struct BungeecordVersionParser;
 
 impl Parser for BungeecordVersionParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let version = schema
-            .extra
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
+        let version = input
+            .global
             .get("bungeecordVersion")
             .and_then(|v| v.as_str())
             .map(parse_bungeecord_version)?;

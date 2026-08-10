@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde_json::Value;
 
 use crate::{models::charts::chart::DefaultChartTemplate, submit_data_schema::SubmitDataSchema};
@@ -13,8 +15,28 @@ pub mod os;
 pub mod predefined_value;
 pub mod semver;
 
+/// The parts of a submission a default chart parser may read.
+///
+/// The global service sees the same global properties but no service
+/// properties.
+pub struct ParserInput<'a> {
+    /// Arbitrary top level properties, used by parser position `global`
+    pub global: &'a HashMap<String, Value>,
+    /// Arbitrary service properties, used by parser position `plugin`
+    pub service: &'a HashMap<String, Value>,
+}
+
+impl<'a> From<&'a SubmitDataSchema> for ParserInput<'a> {
+    fn from(schema: &'a SubmitDataSchema) -> Self {
+        Self {
+            global: &schema.extra,
+            service: &schema.service.extra,
+        }
+    }
+}
+
 pub trait Parser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value>;
+    fn parse(&self, input: &ParserInput) -> Option<Value>;
 }
 
 pub fn get_parser(

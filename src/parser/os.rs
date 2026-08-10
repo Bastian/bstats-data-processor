@@ -2,16 +2,16 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 
-use crate::{models::charts::drilldown_pie::DrilldownPie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::drilldown_pie::DrilldownPie, parser::ParserInput};
 
 use super::Parser;
 
 pub struct OsParser;
 
 impl Parser for OsParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let os_name = schema.extra.get("osName").and_then(|v| v.as_str())?;
-        let os_version = schema.extra.get("osVersion").and_then(|v| v.as_str())?;
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
+        let os_name = input.global.get("osName").and_then(|v| v.as_str())?;
+        let os_version = input.global.get("osVersion").and_then(|v| v.as_str())?;
         let (outer, inner) = parse_os(os_name, os_version);
         Some(json!(DrilldownPie {
             values: HashMap::from([(outer, HashMap::from([(inner, 1),])),])

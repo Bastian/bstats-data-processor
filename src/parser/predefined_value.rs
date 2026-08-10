@@ -2,7 +2,7 @@ use serde_json::{Value, json};
 
 use crate::{
     models::charts::{simple_pie::SimplePie, single_line_chart::SingleLineChart},
-    submit_data_schema::SubmitDataSchema,
+    parser::ParserInput,
 };
 
 use super::Parser;
@@ -13,7 +13,7 @@ pub struct PredefinedValueParser {
 }
 
 impl Parser for PredefinedValueParser {
-    fn parse(&self, _schema: &SubmitDataSchema) -> Option<Value> {
+    fn parse(&self, _input: &ParserInput) -> Option<Value> {
         self.parse()
     }
 }

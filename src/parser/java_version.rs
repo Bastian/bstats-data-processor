@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 
-use crate::{models::charts::drilldown_pie::DrilldownPie, submit_data_schema::SubmitDataSchema};
+use crate::{models::charts::drilldown_pie::DrilldownPie, parser::ParserInput};
 
 use super::Parser;
 
 pub struct JavaVersionParser;
 
 impl Parser for JavaVersionParser {
-    fn parse(&self, schema: &SubmitDataSchema) -> Option<Value> {
-        let java_version = schema.extra.get("javaVersion").and_then(|v| v.as_str())?;
+    fn parse(&self, input: &ParserInput) -> Option<Value> {
+        let java_version = input.global.get("javaVersion").and_then(|v| v.as_str())?;
         let major_version = get_java_major_version(java_version);
         Some(json!(DrilldownPie {
             values: HashMap::from([(
