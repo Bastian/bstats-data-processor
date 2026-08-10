@@ -53,7 +53,6 @@ pub async fn handle_legacy_data_submission(
                     extra: plugin.extra,
                 },
             },
-            false,
             Some(&mut con),
         )
         .await;

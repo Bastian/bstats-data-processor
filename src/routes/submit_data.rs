@@ -30,7 +30,6 @@ pub async fn submit_data(
         &redis_pool,
         software_url.as_str(),
         &data,
-        false,
         None,
     )
     .await
@@ -41,6 +40,7 @@ mod integration_tests {
     use super::*;
     use crate::test_support::{redis_dump, test_environment::TestEnvironment};
     use actix_web::{App, http::header::ContentType, test, web};
+    use redis::AsyncCommands;
     use serde_json::json;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
@@ -252,10 +252,79 @@ mod integration_tests {
             )
             .to_request();
 
+        let redis_state_before =
+            redis_dump::capture(&mut test_environment.redis_connection().await).await;
+
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status().as_u16(), 400);
 
         let body = test::read_body(resp).await;
         assert_eq!(body, "Service does not belong to this software");
+
+        // A rejected service must not contribute to the global service either.
+        // Only the ratelimit of the submitted service may have been consumed.
+        let redis_state_after =
+            redis_dump::capture(&mut test_environment.redis_connection().await).await;
+        let diff = redis_dump::diff(&redis_state_before, &redis_state_after);
+
+        let unexpected: Vec<_> = diff
+            .added
+            .iter()
+            .filter(|entry| !entry.key.starts_with("ratelimit:"))
+            .collect();
+        assert!(
+            unexpected.is_empty(),
+            "rejected submission wrote chart data: {unexpected:?}"
+        );
+        assert!(
+            diff.removed.is_empty(),
+            "unexpected removals: {:?}",
+            diff.removed
+        );
+    }
+
+    #[actix_web::test]
+    async fn global_service_failure_fails_the_submission() {
+        // A failing write to the global service means something is seriously
+        // broken, so it must not be swallowed.
+        let test_environment = TestEnvironment::with_data().await;
+        let redis_pool = test_environment.redis_pool();
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(redis_pool.clone()))
+                .service(submit_data),
+        )
+        .await;
+
+        // Occupy a key of global service 1 with a type its chart cannot write
+        let mut con = test_environment.redis_connection().await;
+        let _: () = con
+            .set("data:{1}.5.1217905", "not-a-sorted-set")
+            .await
+            .unwrap();
+
+        let req = test::TestRequest::post()
+            .uri("/bukkit")
+            .peer_addr(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 1111))
+            .insert_header(ContentType::json())
+            .set_payload(
+                json!({
+                    "playerAmount": 25,
+                    "onlineMode": 1,
+                    "service": { "id": 27400 },
+                    "serverUUID": "7386d410-f71e-447c-b356-ee809c7db098",
+                    "metricsVersion": "3.0.2"
+                })
+                .to_string(),
+            )
+            .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status().as_u16(), 500);
+
+        // Slots are flushed concurrently and none of them is rolled back, so
+        // the healthy keys of this request are written regardless of the 500.
+        let players: Option<i64> = con.hget("data:335501.1", "3141592200000").await.unwrap();
+        assert_eq!(players, Some(25));
     }
 }

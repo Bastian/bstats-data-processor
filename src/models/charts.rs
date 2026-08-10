@@ -32,12 +32,12 @@ static CACHE: Lazy<Cache<u64, Chart>> = Lazy::new(|| Cache::with_ttl_minutes(60)
 /// Find all charts with the given IDs.
 pub async fn find_by_ids<C: AsyncCommands>(
     con: &mut C,
-    ids: Vec<u64>,
+    ids: &[u64],
 ) -> Result<HashMap<u64, Option<Chart>>, redis::RedisError> {
     // TODO: Move all charts from a single service in a single hash and use pipelining
     let mut response = HashMap::new();
     for id in ids {
-        response.insert(id, find_by_id(con, id).await?);
+        response.insert(*id, find_by_id(con, *id).await?);
     }
     Ok(response)
 }
@@ -112,7 +112,7 @@ mod integration_tests {
         let mut con = test_environment.redis_connection().await;
 
         let charts: std::collections::HashMap<u64, Option<Chart>> =
-            find_by_ids(&mut con, vec![3, 4]).await.unwrap();
+            find_by_ids(&mut con, &[3, 4]).await.unwrap();
 
         assert_eq!(
             charts.get(&3).unwrap().as_ref().unwrap().id_custom.clone(),

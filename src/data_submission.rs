@@ -4,13 +4,14 @@ use std::str::FromStr;
 use crate::chart_updater::update_chart;
 use crate::models::charts;
 use crate::models::service;
+use crate::models::service::Service;
 use crate::models::software;
+use crate::models::software::Software;
 use crate::parser;
 use crate::parser::ParserInput;
 use crate::ratelimits::is_ratelimited;
 use crate::submit_data_schema::SubmitDataChartSchema;
 use crate::submit_data_schema::SubmitDataSchema;
-use crate::submit_data_schema::SubmitDataServiceSchema;
 use crate::util::date::date_to_tms2000;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
@@ -18,13 +19,28 @@ use crate::util::redis::RedisClusterPool;
 use crate::util::slot_pipeline::SlotPipeline;
 use actix_web::{HttpRequest, HttpResponse, error, web};
 use deadpool_redis::cluster::Connection;
+use serde_json::Value;
+
+/// Everything about a request that does not depend on the service being
+/// processed. Determined once so that the global service does not repeat the
+/// GeoIP lookup, the IP parsing or the software lookup.
+struct RequestContext<'a> {
+    software: Software,
+    /// The URL the request was sent to. Used for ratelimit keys, so that every
+    /// service of a request shares the same namespace.
+    software_url: &'a str,
+    tms2000: i64,
+    ip: String,
+    country_iso: Option<String>,
+    country_name: Option<String>,
+    data: &'a SubmitDataSchema,
+}
 
 pub async fn handle_data_submission(
     request: &HttpRequest,
     redis_pool: &web::Data<RedisClusterPool>,
     software_url: &str,
     data: &SubmitDataSchema,
-    is_global_service: bool,
     connection: Option<&mut Connection>,
 ) -> actix_web::Result<HttpResponse> {
     let mut owned_con;
@@ -77,50 +93,6 @@ pub async fn handle_data_submission(
         Ok(false) => {}
     }
 
-    // Global services are "fake" requests. We just recursively call this method
-    // again, but with the data for the global service. Ratelimits ensure that
-    // this only happens once per server.
-    if !is_global_service && software.global_plugin.is_some() {
-        let global_plugin = software.global_plugin.unwrap();
-        let global_plugin = service::find_by_id(con, global_plugin).await;
-        let global_plugin = match global_plugin {
-            Ok(o) => o,
-            Err(e) => return Err(error::ErrorInternalServerError(e)),
-        };
-
-        if let Some(global_plugin) = global_plugin {
-            let result = Box::pin(handle_data_submission(
-                request,
-                redis_pool,
-                software_url,
-                &SubmitDataSchema {
-                    server_uuid: data.server_uuid.clone(),
-                    metrics_version: data.metrics_version.clone(),
-                    extra: data.extra.clone(),
-                    service: SubmitDataServiceSchema {
-                        id: global_plugin.id,
-                        custom_charts: None,
-                        extra: HashMap::new(),
-                    },
-                },
-                true,
-                Some(con),
-            ))
-            .await;
-            match result {
-                Ok(_) => {}
-                Err(e) => {
-                    if e.as_response_error().status_code() == 429 {
-                        // Too many requests can be ignored
-                    } else {
-                        // TODO Use proper logging framework
-                        println!("Error: {:?}", e);
-                    }
-                }
-            }
-        }
-    }
-
     let service = match service::find_by_id(con, data.service.id).await {
         Ok(None) => return Err(error::ErrorNotFound("Service not found")),
         Err(e) => return Err(error::ErrorInternalServerError(e)),
@@ -133,7 +105,7 @@ pub async fn handle_data_submission(
         ));
     }
 
-    if service.global && !is_global_service {
+    if service.global {
         return Err(error::ErrorBadRequest(
             "You must not send data for global services",
         ));
@@ -143,18 +115,73 @@ pub async fn handle_data_submission(
         Ok(ip) => geo_ip::get_country(ip),
         _ => None,
     };
-
     let (country_iso, country_name) = match country {
         Some((iso, country)) => (Some(iso), country),
         None => (None, None),
     };
 
-    let parser_input = ParserInput::from(data);
-    let default_charts: Vec<_> = software
+    let context = RequestContext {
+        software,
+        software_url,
+        tms2000,
+        ip,
+        country_iso,
+        country_name,
+        data,
+    };
+
+    let mut pipeline = SlotPipeline::new();
+
+    collect_service_charts(
+        &context,
+        &service,
+        &context.data.service.extra,
+        context.data.service.custom_charts.as_deref(),
+        &mut pipeline,
+        con,
+    )
+    .await?;
+
+    // Global services are "fake" submissions that every request contributes to.
+    // Ratelimits ensure that this only happens once per server and interval.
+    if let Some(global_service_id) = context.software.global_plugin {
+        collect_global_service_charts(&context, global_service_id, &mut pipeline, con).await?;
+    }
+
+    // A single flush for both services, so the request waits for one round trip
+    // no matter how many slots are involved.
+    pipeline
+        .query_async(con)
+        .await
+        .map_err(error::ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().finish())
+}
+
+/// Adds the chart updates of a single service to `pipeline`.
+///
+/// `service_extra` and `custom_charts` are passed separately because the global
+/// service is processed with the same request but without any service specific
+/// data.
+async fn collect_service_charts(
+    context: &RequestContext<'_>,
+    service: &Service,
+    service_extra: &HashMap<String, Value>,
+    custom_charts: Option<&[SubmitDataChartSchema]>,
+    pipeline: &mut SlotPipeline,
+    con: &mut Connection,
+) -> actix_web::Result<()> {
+    let parser_input = ParserInput {
+        global: &context.data.extra,
+        service: service_extra,
+    };
+
+    let default_charts: Vec<_> = context
+        .software
         .default_charts
         .iter()
         .filter_map(|template| {
-            parser::get_parser(template, country_name.clone()).and_then(|parser| {
+            parser::get_parser(template, context.country_name.clone()).and_then(|parser| {
                 Some(SubmitDataChartSchema {
                     chart_id: template.id.clone(),
                     data: parser.parse(&parser_input)?,
@@ -164,13 +191,13 @@ pub async fn handle_data_submission(
         })
         .collect();
 
-    let custom_charts = data.service.custom_charts.clone().unwrap_or_default();
-    let chart_data = default_charts.iter().chain(custom_charts.iter());
+    let resolved_charts = charts::find_by_ids(con, &service.charts)
+        .await
+        .map_err(error::ErrorInternalServerError)?;
 
-    let resolved_charts: std::collections::HashMap<u64, Option<charts::Chart>> =
-        charts::find_by_ids(con, service.charts).await.unwrap();
-
-    let mut pipeline = SlotPipeline::new();
+    let chart_data = default_charts
+        .iter()
+        .chain(custom_charts.unwrap_or_default().iter());
 
     for chart_data in chart_data {
         let service_chart: &charts::Chart = match resolved_charts
@@ -190,16 +217,64 @@ pub async fn handle_data_submission(
         let _ = update_chart(
             service_chart,
             chart_data,
-            tms2000,
-            country_iso.as_deref(),
-            &mut pipeline,
+            context.tms2000,
+            context.country_iso.as_deref(),
+            pipeline,
         );
     }
 
-    pipeline
-        .query_async(con)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+    Ok(())
+}
 
-    Ok(HttpResponse::Ok().finish())
+/// Adds the chart updates of the software's global service to `pipeline`.
+///
+/// A broken global service is never a normal case, so its errors are propagated
+/// like any other. Only a misconfigured `global_plugin` is skipped.
+async fn collect_global_service_charts(
+    context: &RequestContext<'_>,
+    global_service_id: u32,
+    pipeline: &mut SlotPipeline,
+    con: &mut Connection,
+) -> actix_web::Result<()> {
+    let ratelimited = is_ratelimited(
+        con,
+        context.software_url,
+        context.software.max_requests_per_ip,
+        &context.data.server_uuid,
+        &context.ip,
+        global_service_id,
+        context.tms2000,
+    )
+    .await
+    .map_err(error::ErrorInternalServerError)?;
+
+    if ratelimited {
+        // The server already contributed to the global service in this interval
+        return Ok(());
+    }
+
+    let global_service = match service::find_by_id(con, global_service_id)
+        .await
+        .map_err(error::ErrorInternalServerError)?
+    {
+        Some(s) => s,
+        // The software points at a global service that does not exist
+        None => return Ok(()),
+    };
+
+    if global_service.software_id != context.software.id {
+        return Ok(());
+    }
+
+    // The global service has no service specific data of its own
+    let no_service_extra: HashMap<String, Value> = HashMap::new();
+    collect_service_charts(
+        context,
+        &global_service,
+        &no_service_extra,
+        None,
+        pipeline,
+        con,
+    )
+    .await
 }
