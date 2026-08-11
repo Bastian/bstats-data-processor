@@ -44,7 +44,6 @@ async fn _is_ratelimited<C: AsyncCommands>(
     let key = format!("ratelimit:{}.{}.{}", identifier, software_url, tms2000);
 
     let request_count: Vec<u16> = redis::pipe()
-        .atomic()
         .incr(&key, 1)
         .expire(&key, 60 * 31)
         .ignore()
