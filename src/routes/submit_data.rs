@@ -1,5 +1,6 @@
 use actix_web::{HttpRequest, HttpResponse, error, post, web};
 
+use crate::chart_buffer::ChartBuffer;
 use crate::data_submission;
 use crate::submit_data_schema::SubmitDataSchema;
 use crate::util::redis::RedisClusterPool;
@@ -9,6 +10,7 @@ use crate::validation::has_blocked_words;
 pub async fn submit_data(
     request: HttpRequest,
     redis_pool: web::Data<RedisClusterPool>,
+    chart_buffer: web::Data<ChartBuffer>,
     software_url: web::Path<String>,
     body: web::Bytes,
 ) -> actix_web::Result<HttpResponse> {
@@ -28,6 +30,7 @@ pub async fn submit_data(
     data_submission::handle_data_submission(
         &request,
         &redis_pool,
+        &chart_buffer,
         software_url.as_str(),
         &data,
         None,
@@ -38,6 +41,7 @@ pub async fn submit_data(
 #[cfg(all(test, feature = "integration-tests"))]
 mod integration_tests {
     use super::*;
+    use crate::chart_buffer::ChartFlusher;
     use crate::test_support::{redis_dump, test_environment::TestEnvironment};
     use actix_web::{App, http::header::ContentType, test, web};
     use redis::AsyncCommands;
@@ -52,9 +56,11 @@ mod integration_tests {
     async fn snapshot_state(name: &str, payload: serde_json::Value) {
         let test_environment = TestEnvironment::with_data().await;
         let redis_pool = test_environment.redis_pool();
+        let chart_buffer = web::Data::new(ChartBuffer::new());
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(redis_pool.clone()))
+                .app_data(chart_buffer.clone())
                 .service(submit_data),
         )
         .await;
@@ -74,6 +80,13 @@ mod integration_tests {
 
         let body = test::read_body(resp).await;
         assert_eq!(body, "");
+
+        // Chart writes only reach Redis with a flush
+        ChartFlusher::new()
+            .unwrap()
+            .flush(&chart_buffer)
+            .await
+            .unwrap();
 
         let redis_state_after =
             redis_dump::capture(&mut test_environment.redis_connection().await).await;
@@ -229,9 +242,11 @@ mod integration_tests {
         // it to the bungeecord endpoint should be rejected.
         let test_environment = TestEnvironment::with_data().await;
         let redis_pool = test_environment.redis_pool();
+        let chart_buffer = web::Data::new(ChartBuffer::new());
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(redis_pool.clone()))
+                .app_data(chart_buffer.clone())
                 .service(submit_data),
         )
         .await;
@@ -263,6 +278,12 @@ mod integration_tests {
 
         // A rejected service must not contribute to the global service either.
         // Only the ratelimit of the submitted service may have been consumed.
+        // The flush proves that nothing was buffered for the request.
+        ChartFlusher::new()
+            .unwrap()
+            .flush(&chart_buffer)
+            .await
+            .unwrap();
         let redis_state_after =
             redis_dump::capture(&mut test_environment.redis_connection().await).await;
         let diff = redis_dump::diff(&redis_state_before, &redis_state_after);
@@ -284,14 +305,16 @@ mod integration_tests {
     }
 
     #[actix_web::test]
-    async fn global_service_failure_fails_the_submission() {
-        // A failing write to the global service means something is seriously
-        // broken, so it must not be swallowed.
+    async fn chart_write_errors_surface_at_flush_instead_of_the_request() {
+        // With buffered chart writes a broken key can no longer fail the
+        // submission; the error surfaces at flush time.
         let test_environment = TestEnvironment::with_data().await;
         let redis_pool = test_environment.redis_pool();
+        let chart_buffer = web::Data::new(ChartBuffer::new());
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(redis_pool.clone()))
+                .app_data(chart_buffer.clone())
                 .service(submit_data),
         )
         .await;
@@ -320,10 +343,20 @@ mod integration_tests {
             .to_request();
 
         let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status().as_u16(), 500);
+        assert_eq!(resp.status().as_u16(), 200);
 
-        // Slots are flushed concurrently and none of them is rolled back, so
-        // the healthy keys of this request are written regardless of the 500.
+        let error = ChartFlusher::new()
+            .unwrap()
+            .flush(&chart_buffer)
+            .await
+            .expect_err("wrong type must surface at the flush");
+        assert!(
+            error.to_string().contains("WRONGTYPE"),
+            "unexpected error: {error}"
+        );
+
+        // Redis executes every command of a pipeline it receives, so the
+        // healthy keys of the request are written regardless of the error.
         let players: Option<i64> = con.hget("data:335501.1", "3141592200000").await.unwrap();
         assert_eq!(players, Some(25));
     }

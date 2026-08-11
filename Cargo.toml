@@ -16,7 +16,7 @@ serde_with = "3.14.1"
 regex = "1.11.2"
 once_cell = "1.19.0"
 redis-test = "0.12.0"
-tokio = "1.39.1"
+tokio = { version = "1.39.1", features = ["macros", "rt", "sync", "time"] }
 chrono = "0.4.42"
 maxminddb = "0.26.0"
 futures-util = "0.3.31"

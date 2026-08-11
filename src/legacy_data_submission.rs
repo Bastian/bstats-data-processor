@@ -1,6 +1,7 @@
 use actix_web::{HttpRequest, HttpResponse, error, web};
 
 use crate::{
+    chart_buffer::ChartBuffer,
     data_submission::handle_data_submission,
     legacy_submit_data_schema::LegacySubmitDataSchema,
     models::service,
@@ -11,6 +12,7 @@ use crate::{
 pub async fn handle_legacy_data_submission(
     request: &HttpRequest,
     redis_pool: &web::Data<RedisClusterPool>,
+    chart_buffer: &ChartBuffer,
     software_url: &str,
     data: LegacySubmitDataSchema,
 ) -> actix_web::Result<HttpResponse> {
@@ -42,6 +44,7 @@ pub async fn handle_legacy_data_submission(
         let _ = handle_data_submission(
             request,
             redis_pool,
+            chart_buffer,
             software_url,
             &SubmitDataSchema {
                 server_uuid: data.server_uuid.clone(),

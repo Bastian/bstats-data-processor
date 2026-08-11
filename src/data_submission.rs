@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use crate::chart_buffer::{ChartBuffer, ChartOps};
 use crate::chart_updater::update_chart;
 use crate::models::charts;
 use crate::models::service;
@@ -16,7 +17,6 @@ use crate::util::date::date_to_tms2000;
 use crate::util::geo_ip;
 use crate::util::ip_parser;
 use crate::util::redis::RedisClusterPool;
-use crate::util::slot_pipeline::SlotPipeline;
 use actix_web::{HttpRequest, HttpResponse, error, web};
 use deadpool_redis::cluster::Connection;
 use serde_json::Value;
@@ -39,6 +39,7 @@ struct RequestContext<'a> {
 pub async fn handle_data_submission(
     request: &HttpRequest,
     redis_pool: &web::Data<RedisClusterPool>,
+    chart_buffer: &ChartBuffer,
     software_url: &str,
     data: &SubmitDataSchema,
     connection: Option<&mut Connection>,
@@ -130,14 +131,14 @@ pub async fn handle_data_submission(
         data,
     };
 
-    let mut pipeline = SlotPipeline::new();
+    let mut ops = ChartOps::new();
 
     collect_service_charts(
         &context,
         &service,
         &context.data.service.extra,
         context.data.service.custom_charts.as_deref(),
-        &mut pipeline,
+        &mut ops,
         con,
     )
     .await?;
@@ -145,15 +146,12 @@ pub async fn handle_data_submission(
     // Global services are "fake" submissions that every request contributes to.
     // Ratelimits ensure that this only happens once per server and interval.
     if let Some(global_service_id) = context.software.global_plugin {
-        collect_global_service_charts(&context, global_service_id, &mut pipeline, con).await?;
+        collect_global_service_charts(&context, global_service_id, &mut ops, con).await?;
     }
 
-    // A single flush for both services, so the request waits for one round trip
-    // no matter how many slots are involved.
-    pipeline
-        .query_async(con)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+    // The response does not wait for the chart writes: the deltas of both
+    // services are summed in the shared buffer and flushed in the background.
+    chart_buffer.merge(ops);
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -168,7 +166,7 @@ async fn collect_service_charts(
     service: &Service,
     service_extra: &HashMap<String, Value>,
     custom_charts: Option<&[SubmitDataChartSchema]>,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
     con: &mut Connection,
 ) -> actix_web::Result<()> {
     let parser_input = ParserInput {
@@ -219,7 +217,7 @@ async fn collect_service_charts(
             chart_data,
             context.tms2000,
             context.country_iso.as_deref(),
-            pipeline,
+            ops,
         );
     }
 
@@ -233,7 +231,7 @@ async fn collect_service_charts(
 async fn collect_global_service_charts(
     context: &RequestContext<'_>,
     global_service_id: u32,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
     con: &mut Connection,
 ) -> actix_web::Result<()> {
     let ratelimited = is_ratelimited(
@@ -268,13 +266,5 @@ async fn collect_global_service_charts(
 
     // The global service has no service specific data of its own
     let no_service_extra: HashMap<String, Value> = HashMap::new();
-    collect_service_charts(
-        context,
-        &global_service,
-        &no_service_extra,
-        None,
-        pipeline,
-        con,
-    )
-    .await
+    collect_service_charts(context, &global_service, &no_service_extra, None, ops, con).await
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::util::slot_pipeline::SlotPipeline;
+use crate::chart_buffer::ChartOps;
 use crate::{
     models::charts::{
         Chart,
@@ -23,7 +23,7 @@ pub fn update_chart(
     data: &SubmitDataChartSchema,
     tms2000: i64,
     country_iso: Option<&str>,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
 ) -> Result<(), serde_json::Error> {
     match chart.r#type {
         ChartType::SingleLineChart => {
@@ -38,31 +38,17 @@ pub fn update_chart(
                 None => Some(data),
             };
             if let Some(data) = data {
-                update_line_chart_data(chart.id, tms2000, "1", data.value, pipeline);
+                update_line_chart_data(chart.id, tms2000, "1", data.value, ops);
             }
         }
         ChartType::SimplePie => {
             let data: SimplePie = serde_json::from_value(data.data.clone())?;
-            update_pie_data(
-                chart.service_id,
-                chart.id,
-                tms2000,
-                &data.value,
-                1,
-                pipeline,
-            );
+            update_pie_data(chart.service_id, chart.id, tms2000, &data.value, 1, ops);
         }
         ChartType::AdvancedPie => {
             let data: AdvancedPie = serde_json::from_value(data.data.clone())?;
             for (value_name, value) in data.values.iter() {
-                update_pie_data(
-                    chart.service_id,
-                    chart.id,
-                    tms2000,
-                    value_name,
-                    *value,
-                    pipeline,
-                );
+                update_pie_data(chart.service_id, chart.id, tms2000, value_name, *value, ops);
             }
         }
         ChartType::DrilldownPie => {
@@ -74,7 +60,7 @@ pub fn update_chart(
                     tms2000,
                     value_name,
                     values.clone(),
-                    pipeline,
+                    ops,
                 );
             }
         }
@@ -94,7 +80,7 @@ pub fn update_chart(
                     &data.value
                 },
                 1,
-                pipeline,
+                ops,
             );
         }
         ChartType::AdvancedMap => {
@@ -109,7 +95,7 @@ pub fn update_chart(
                     tms2000,
                     category,
                     bar_values,
-                    pipeline,
+                    ops,
                 );
             }
         }
@@ -123,11 +109,11 @@ pub fn update_pie_data(
     tms2000: i64,
     value_name: &str,
     value: u32,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
 ) {
     let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
-    pipeline.zincr(&key, value_name, value);
-    pipeline.expire(&key, 60 * 61);
+    ops.zincr(key.clone(), value_name.to_string(), i64::from(value));
+    ops.expire(key, 60 * 61);
 }
 
 pub fn update_map_data(
@@ -136,23 +122,22 @@ pub fn update_map_data(
     tms2000: i64,
     value_name: &str,
     value: u32,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
 ) {
     // The charts are saved the same way
-    update_pie_data(service_id, chart_id, tms2000, value_name, value, pipeline);
+    update_pie_data(service_id, chart_id, tms2000, value_name, value, ops);
 }
 
-/// Line chart keys carry no hash tag, so they usually end up in a different
-/// slot than the rest of the request. [`SlotPipeline`] groups them accordingly.
 pub fn update_line_chart_data(
     chart_id: u64,
     tms2000: i64,
     line: &str,
     value: i32,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
 ) {
     let key = format!("data:{}.{}", chart_id, line);
-    pipeline.hincr(&key, tms2000_to_timestamp(tms2000) * 1000, value);
+    let field = (tms2000_to_timestamp(tms2000) * 1000).to_string();
+    ops.hincr(key, field, i64::from(value));
 }
 
 const MAX_BARS_PER_CATEGORY: usize = 25;
@@ -165,7 +150,7 @@ pub fn update_bar_chart_data(
     tms2000: i64,
     category: &str,
     bar_values: &[i64],
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
 ) {
     // The backend splits hash fields on `:`, so a category containing `:` would
     // be mis-parsed into a different category. Drop it instead of corrupting data.
@@ -174,9 +159,13 @@ pub fn update_bar_chart_data(
     }
     let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
     for (bar_index, bar_value) in bar_values.iter().take(MAX_BARS_PER_CATEGORY).enumerate() {
-        pipeline.hincr(&key, format!("{}:{}", category, bar_index), *bar_value);
+        ops.hincr(
+            key.clone(),
+            format!("{}:{}", category, bar_index),
+            *bar_value,
+        );
     }
-    pipeline.expire(&key, 60 * 61);
+    ops.expire(key, 60 * 61);
 }
 
 pub fn update_drilldown_pie_data(
@@ -185,7 +174,7 @@ pub fn update_drilldown_pie_data(
     tms2000: i64,
     value_name: &str,
     values: HashMap<String, u32>,
-    pipeline: &mut SlotPipeline,
+    ops: &mut ChartOps,
 ) {
     let mut total_value = 0;
     for (value_key, value) in values.iter() {
@@ -194,10 +183,10 @@ pub fn update_drilldown_pie_data(
             "data:{{{}}}.{}.{}.{}",
             service_id, chart_id, tms2000, value_name
         );
-        pipeline.zincr(&key, value_key, value);
-        pipeline.expire(&key, 60 * 61);
+        ops.zincr(key.clone(), value_key.to_string(), i64::from(*value));
+        ops.expire(key, 60 * 61);
     }
     let key = format!("data:{{{}}}.{}.{}", service_id, chart_id, tms2000);
-    pipeline.zincr(&key, value_name, total_value);
-    pipeline.expire(&key, 60 * 61);
+    ops.zincr(key.clone(), value_name.to_string(), i64::from(total_value));
+    ops.expire(key, 60 * 61);
 }

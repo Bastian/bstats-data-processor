@@ -1,5 +1,6 @@
 use actix_web::{HttpRequest, HttpResponse, error, post, web};
 
+use crate::chart_buffer::ChartBuffer;
 use crate::legacy_data_submission;
 use crate::legacy_submit_data_schema::LegacySubmitDataSchema;
 use crate::util::redis::RedisClusterPool;
@@ -9,6 +10,7 @@ use crate::validation::has_blocked_words;
 pub async fn legacy_submit_data(
     request: HttpRequest,
     redis_pool: web::Data<RedisClusterPool>,
+    chart_buffer: web::Data<ChartBuffer>,
     software_url: web::Path<String>,
     body: web::Bytes,
 ) -> actix_web::Result<HttpResponse> {
@@ -28,6 +30,7 @@ pub async fn legacy_submit_data(
     legacy_data_submission::handle_legacy_data_submission(
         &request,
         &redis_pool,
+        &chart_buffer,
         software_url.as_str(),
         data,
     )
