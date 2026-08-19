@@ -53,6 +53,7 @@ static SERVER_SOFTWARE_BRANDS: phf::OrderedMap<&'static str, &'static str> = phf
     "slimeworldmanager" => "SlimeWorldManager", // https://www.spigotmc.org/resources/slimeworldmanager.69974/ EOL: Now AdvancedSlimePaper
     "divinemc" => "DivineMC", // https://github.com/BX-Team/DivineMC
     "deepslatemc" => "DeepslateMC", // https://github.com/Pascalpex/DeepslateMC
+    "endstone" => "Endstone", // https://github.com/EndstoneMC/endstone
 };
 
 fn parse_bukkit_server_software(
@@ -269,6 +270,12 @@ mod tests {
                 bukkit_version: String::from("1.21.8-DEV-5793a55 (MC: 1.21.8)"),
                 bukkit_name: String::from("DeepslateMC"),
                 expected: String::from("DeepslateMC"),
+            },
+            TestCase {
+                name: String::from("Endstone 0.11.2"),
+                bukkit_version: String::from("0.11.2 (MC: 1.26.0)"),
+                bukkit_name: String::from("Endstone"),
+                expected: String::from("Endstone"),
             },
         ];
 
