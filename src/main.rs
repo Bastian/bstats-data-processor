@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use actix_web::{App, HttpServer, web};
 use data_processor::chart_buffer::{ChartBuffer, ChartFlusher, flush_loop};
@@ -32,7 +33,12 @@ async fn main() -> std::io::Result<()> {
         http_server = http_server.workers(workers.parse().unwrap());
     }
 
-    let result = http_server.bind((host, port))?.run().await;
+    // Above Caddy's upstream keepalive (90s), so Caddy closes idle connections first
+    let result = http_server
+        .keep_alive(Duration::from_secs(120))
+        .bind((host, port))?
+        .run()
+        .await;
 
     // Flush what the last requests buffered before the process exits,
     // also when the server stopped with an error
