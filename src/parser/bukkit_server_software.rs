@@ -54,6 +54,7 @@ static SERVER_SOFTWARE_BRANDS: phf::OrderedMap<&'static str, &'static str> = phf
     "divinemc" => "DivineMC", // https://github.com/BX-Team/DivineMC
     "deepslatemc" => "DeepslateMC", // https://github.com/Pascalpex/DeepslateMC
     "endstone" => "Endstone", // https://github.com/EndstoneMC/endstone
+    "paperstream" => "PaperStream", // https://github.com/LucasTHCRR/PaperStream
 };
 
 fn parse_bukkit_server_software(
@@ -264,6 +265,12 @@ mod tests {
                 bukkit_version: String::from("1.21.4-476-c0ca1f9 (MC: 1.21.4)"),
                 bukkit_name: String::from("DivineMC"),
                 expected: String::from("DivineMC"),
+            },
+            TestCase {
+                name: String::from("PaperStream 26.3"),
+                bukkit_version: String::from("26.3-DEV-8f9515e (MC: 26.3)"),
+                bukkit_name: String::from("PaperStream"),
+                expected: String::from("PaperStream"),
             },
             TestCase {
                 name: String::from("DeepslateMC 1.21.8"),
